@@ -9,6 +9,7 @@ const monitorButton = document.querySelector("#monitor-live-folder");
 const monitorStatus = document.querySelector("#monitor-status");
 const snapshot = document.querySelector("#snapshot");
 const session = document.querySelector("#session");
+const timeline = document.querySelector("#session-timeline");
 const supportedExtensions = /\.(log|txt|json|xml)$/i;
 const maxTextFileSize = 25 * 1024 * 1024;
 let report;
@@ -47,6 +48,12 @@ function renderReport(nextReport, skipped = 0) {
   }));
   renderKeyValues(session, report.session, " min");
   document.querySelector("#session-section").classList.toggle("hidden", !session.children.length);
+  timeline.replaceChildren(...report.sessionEvents.map(event => {
+    const item = document.createElement("li");
+    item.textContent = `${event.at} — ${event.label}`;
+    return item;
+  }));
+  document.querySelector("#timeline-section").classList.toggle("hidden", !timeline.children.length);
   renderKeyValues(snapshot, report.hardwareSnapshot);
   document.querySelector("#snapshot-section").classList.toggle("hidden", !snapshot.children.length);
   document.querySelector("#redaction").textContent = report.redactedEvidence.slice(0, 5000);

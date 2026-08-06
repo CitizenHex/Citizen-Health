@@ -36,6 +36,28 @@ export function parseDxDiag(text) {
   return Object.fromEntries(Object.entries(snapshot).filter(([, value]) => value));
 }
 
+export function parseSessionEvents(text) {
+  const events = [];
+  for (const line of text.split(/\r?\n/)) {
+    const timestamp = line.match(/<(\d{4}-\d{2}-\d{2}T[^>]+)>/)?.[1];
+    if (!timestamp) continue;
+    if (/taskname="InGame".*gamerules="SC_Default"/i.test(line)) {
+      events.push({ at: timestamp, type: "entered-game", label: "Entered game session" });
+    } else if (/<Channel Disconnected>.*viewState=eCVS_InGame/i.test(line)) {
+      const cause = line.match(/cause=(\d+)/i)?.[1];
+      const reason = line.match(/reason="([^"]+)"/i)?.[1];
+      events.push({ at: timestamp, type: "disconnected", label: `Disconnected${cause ? ` (cause ${cause})` : ""}${reason ? `: ${redact(reason)}` : ""}` });
+    } else if (/<SystemQuit>.*exitCode=(\d+)/i.test(line)) {
+      const exitCode = line.match(/exitCode=(\d+)/i)[1];
+      events.push({ at: timestamp, type: "application-exit", label: `Application exited (code ${exitCode})` });
+    }
+  }
+  return events.filter((event, index, all) => {
+    const previous = all[index - 1];
+    return !previous || event.at !== previous.at || event.type !== previous.type || event.label !== previous.label;
+  }).slice(-30);
+}
+
 function evidenceLines(text, pattern) {
   return text.split(/\r?\n/).filter(line => pattern.test(line)).slice(0, 3).map(redact);
 }
@@ -71,7 +93,8 @@ export function analyze(files) {
   if (findings.some(finding => finding.id === "controlled-exit")) findings = findings.filter(finding => finding.id !== "network");
   if (!findings.length) findings.push({ id: "unknown", confidence: "low", title: "No recognized cause", evidence: "The selected files do not contain a supported diagnostic signature.", evidenceLines: [], action: "Add Game.log, launcher log, crash-handler text, and DxDiag if available. Do not assume the PC is at fault.", link: "https://support.robertsspaceindustries.com/hc/en-us/articles/360000065688-Send-In-Game-Files-for-RSI-Support" });
   const dxDiag = selection.files.find(file => /dxdiag/i.test(file.name));
-  return { createdAt: new Date().toISOString(), fileNames: selection.files.map(file => file.name), skippedFileNames: selection.skippedFileNames, findings, session: parseSession(selection.files.find(file => /game/i.test(file.name))), hardwareSnapshot: dxDiag ? parseDxDiag(dxDiag.text) : {}, redactedEvidence: redact(joined) };
+  const gameLog = selection.files.find(file => /game/i.test(file.name));
+  return { createdAt: new Date().toISOString(), fileNames: selection.files.map(file => file.name), skippedFileNames: selection.skippedFileNames, findings, session: parseSession(gameLog), sessionEvents: gameLog ? parseSessionEvents(gameLog.text) : [], hardwareSnapshot: dxDiag ? parseDxDiag(dxDiag.text) : {}, redactedEvidence: redact(joined) };
 }
 
 export function createExportBundle(report) {
@@ -82,6 +105,7 @@ export function createExportBundle(report) {
     analyzedFiles: report.fileNames,
     skippedOlderGameLogs: report.skippedFileNames,
     session: report.session,
+    sessionEvents: report.sessionEvents,
     hardwareSnapshot: report.hardwareSnapshot,
     findings: report.findings.map(({ id, confidence, title, evidence, evidenceLines, action, link }) => ({ id, confidence, title, evidence, evidenceLines, action, remediationLink: link })),
     privacy: "This export intentionally excludes complete source logs, binary dumps, and unrecognized raw data."

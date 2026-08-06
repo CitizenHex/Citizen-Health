@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { analyze, createExportBundle, parseDxDiag, redact, selectLatestGameLog } from "../src/analysis.js";
+import { analyze, createExportBundle, parseDxDiag, parseSessionEvents, redact, selectLatestGameLog } from "../src/analysis.js";
 
 test("classifies explicit memory failures with high confidence", () => {
   const report = analyze([{ name: "Game.log", text: "Fatal: Out of memory; failed to allocate 8192 bytes" }]);
@@ -78,4 +78,13 @@ test("extracts a minimal DxDiag snapshot without treating it as a diagnosis", ()
   assert.equal(snapshot.gpu, "NVIDIA GeForce RTX 3070 Ti");
   assert.equal(snapshot.systemMemory, "262144MB RAM");
   assert.equal(snapshot.driver, "32.0.15.9999");
+});
+
+test("builds a deduplicated session timeline only from confirmed game-session markers", () => {
+  const events = parseSessionEvents(`<2026-08-05T22:34:51.233Z> taskname="InGame" state=eCVS_InGame gamerules="SC_Default"\n<2026-08-05T23:00:00.000Z> <Channel Disconnected> cause=30016 reason="User requested disconnect" viewState=eCVS_InGame\n<2026-08-05T23:00:00.000Z> <Channel Disconnected> cause=30016 reason="User requested disconnect" viewState=eCVS_InGame\n<2026-08-05T23:00:02.000Z> <SystemQuit> exitCode=0`);
+  assert.deepEqual(events, [
+    { at: "2026-08-05T22:34:51.233Z", type: "entered-game", label: "Entered game session" },
+    { at: "2026-08-05T23:00:00.000Z", type: "disconnected", label: "Disconnected (cause 30016): User requested disconnect" },
+    { at: "2026-08-05T23:00:02.000Z", type: "application-exit", label: "Application exited (code 0)" }
+  ]);
 });
