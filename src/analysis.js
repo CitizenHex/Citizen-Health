@@ -13,7 +13,7 @@ export function redact(text) {
     .replace(/\b[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}\b/g, "[REDACTED_EMAIL]")
     .replace(/\b(?:\d{1,3}\.){3}\d{1,3}\b/g, "[REDACTED_IP]")
     .replace(/\b(nickname|playerGEID|session|node_id|user)\s*=\s*(?:"[^"]*"|[^\s,;]+)/gi, "$1=[REDACTED]")
-    .replace(/\b(?:token|password|auth(?:orization)?)[=: ]+[^\s,;]+/gi, "$1=[REDACTED]");
+    .replace(/\b(token|password|auth(?:orization)?)[=: ]+[^\s,;]+/gi, "$1=[REDACTED]");
 }
 
 function valueAfter(text, label) {
