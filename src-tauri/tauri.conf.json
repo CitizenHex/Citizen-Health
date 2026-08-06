@@ -4,7 +4,8 @@
   "version": "0.1.0",
   "identifier": "com.zerodiv1de.citizenhealth",
   "build": {
-    "frontendDist": ".."
+    "beforeBuildCommand": "node scripts/prepare-desktop.mjs",
+    "frontendDist": "../dist"
   },
   "app": {
     "windows": [

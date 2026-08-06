@@ -49,7 +49,7 @@ npm test
 
 ## Desktop app foundation
 
-Citizen Health is transitioning from a local web prototype to a Tauri desktop app. The foundation is in `src-tauri` and intentionally grants only the native open-dialog permission; it has no filesystem or network capability yet. Building the Windows app requires Rust and the Tauri JavaScript dependencies.
+Citizen Health is transitioning from a local web prototype to a Tauri desktop app. The foundation is in `src-tauri` and intentionally grants only the native open-dialog permission; it has no filesystem or network capability yet. A clean `dist` bundle is generated from the frontend source before packaging, so development dependencies and Rust source are never included in the installer. Building the Windows app requires Rust and the Tauri JavaScript dependencies.
 
 ## Status
 
