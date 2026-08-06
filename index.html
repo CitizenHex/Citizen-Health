@@ -12,8 +12,9 @@
     <section class="safety"><strong>Read-only by design</strong><span>No injection</span><span>No memory access</span><span>No automation</span><span>No uploads</span></section>
     <section class="panel">
       <div><span class="step">01</span><h2>Analyze latest crash</h2><p>Select the evidence you want analyzed. Files remain in this browser tab.</p></div>
-      <label class="picker"><input id="files" type="file" multiple accept=".log,.txt,.json,.xml,.dmp,.mdmp"><span>Choose logs and diagnostics</span><small>Game.log, launcher log, crash-handler text, optional DxDiag. Binary dumps are not read or exported.</small></label>
+      <div class="picker"><input id="files" type="file" multiple accept=".log,.txt,.json,.xml,.dmp,.mdmp" class="visually-hidden"><button id="choose-files" type="button">Browse files</button><span>Choose logs and diagnostics</span><small>Game.log, launcher log, crash-handler text, optional DxDiag. Binary dumps are not read or exported.</small></div>
       <ul id="selected" class="selected"></ul>
+      <p id="selection-status" class="selection-status">No files selected yet.</p>
       <button id="analyze" disabled>Analyze selected files</button>
     </section>
     <section id="results" class="panel hidden" aria-live="polite">

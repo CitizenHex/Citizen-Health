@@ -1,17 +1,23 @@
 import { analyze, createExportBundle } from "./analysis.js";
 
 const input = document.querySelector("#files");
+const chooseFiles = document.querySelector("#choose-files");
 const button = document.querySelector("#analyze");
 const selected = document.querySelector("#selected");
+const selectionStatus = document.querySelector("#selection-status");
 const snapshot = document.querySelector("#snapshot");
 const session = document.querySelector("#session");
 let report;
 const supportedExtensions = /\.(log|txt|json|xml)$/i;
 const maxTextFileSize = 25 * 1024 * 1024;
 
+chooseFiles.addEventListener("click", () => input.click());
+
 input.addEventListener("change", () => {
+  const files = [...input.files];
+  selectionStatus.textContent = files.length ? `${files.length} file${files.length === 1 ? "" : "s"} selected. Ready to analyze.` : "No files selected yet.";
   selected.replaceChildren(...[...input.files].map(file => Object.assign(document.createElement("li"), { textContent: `${file.name} · ${Math.ceil(file.size / 1024)} KB` })));
-  button.disabled = !input.files.length;
+  button.disabled = !files.length;
 });
 
 button.addEventListener("click", async () => {
