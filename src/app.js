@@ -8,6 +8,7 @@ const liveFolderButton = document.querySelector("#choose-live-folder");
 const launcherFolderButton = document.querySelector("#choose-launcher-folder");
 const monitorButton = document.querySelector("#monitor-live-folder");
 const monitorStatus = document.querySelector("#monitor-status");
+const activityNotice = document.querySelector("#activity-notice");
 const keepHistory = document.querySelector("#keep-history");
 const clearHistory = document.querySelector("#clear-history");
 const historyStatus = document.querySelector("#history-status");
@@ -22,6 +23,7 @@ let liveDirectory;
 let launcherDirectory;
 let monitorTimer;
 let lastObservedFingerprint;
+let lastActivityKey;
 const historyKey = "citizen-health.session-history.v1";
 const historyEnabledKey = "citizen-health.session-history-enabled.v1";
 
@@ -82,9 +84,28 @@ function renderKeyValues(container, values, suffix = "") {
   }
 }
 
-function renderReport(nextReport, skipped = 0) {
+function announceActivity(nextReport) {
+  const actionable = nextReport.findings.find(finding => !["controlled-exit", "unknown", "network"].includes(finding.id));
+  const latestEvent = nextReport.sessionEvents.at(-1);
+  const activity = actionable
+    ? { key: `finding:${actionable.id}:${actionable.evidenceLines.join("|")}`, text: `Review needed: ${actionable.title}. Open the findings below for the evidence and next step.` }
+    : latestEvent?.type === "entered-game"
+      ? { key: `event:${latestEvent.at}:${latestEvent.type}`, text: "New game session detected from the local Game log." }
+      : latestEvent?.type === "disconnected"
+        ? { key: `event:${latestEvent.at}:${latestEvent.type}:${latestEvent.label}`, text: `Disconnect recorded: ${latestEvent.label}` }
+        : latestEvent?.type === "application-exit"
+          ? { key: `event:${latestEvent.at}:${latestEvent.type}`, text: "Game session ended normally according to the local log." }
+          : undefined;
+  if (!activity || activity.key === lastActivityKey) return;
+  lastActivityKey = activity.key;
+  activityNotice.textContent = activity.text;
+  activityNotice.classList.remove("hidden");
+}
+
+function renderReport(nextReport, skipped = 0, automated = false) {
   report = nextReport;
   recordLatestSession(report);
+  if (automated) announceActivity(report);
   document.querySelector("#summary").textContent = `${report.findings.length} finding${report.findings.length === 1 ? "" : "s"} from ${report.fileNames.length} analyzed text file${report.fileNames.length === 1 ? "" : "s"}.${report.skippedFileNames.length ? ` ${report.skippedFileNames.length} older Game log backup${report.skippedFileNames.length === 1 ? " was" : "s were"} left out; only the newest was analyzed.` : ""}${skipped ? ` ${skipped} unsupported, binary, or over-25 MB file${skipped === 1 ? " was" : "s were"} intentionally excluded.` : ""} Confidence describes evidence strength, not severity.`;
   document.querySelector("#findings").replaceChildren(...report.findings.map(finding => {
     const card = document.createElement("article");
@@ -142,7 +163,7 @@ async function checkLiveFolder() {
   const fingerprint = [gameLog, readableLauncher].filter(Boolean).map(file => `${file.name}:${file.size}:${file.lastModified}`).join("|");
   if (fingerprint === lastObservedFingerprint) return;
   lastObservedFingerprint = fingerprint;
-  renderReport(analyze(await Promise.all([gameLog, readableLauncher].filter(Boolean).map(fileForAnalysis))));
+  renderReport(analyze(await Promise.all([gameLog, readableLauncher].filter(Boolean).map(fileForAnalysis))), 0, true);
   monitorStatus.textContent = `Monitoring Game.log${readableLauncher ? " and launcher log.log" : ""} while Citizen Health stays open. Last analyzed: ${gameLog.name}.`;
 }
 

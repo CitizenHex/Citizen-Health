@@ -19,6 +19,8 @@ See [SECURITY.md](SECURITY.md) for the enforceable product policy.
 
 While the site is open, a player may explicitly choose their Star Citizen `LIVE` folder and enable local monitoring. Citizen Health then reads only the current `Game.log` (or newest backup if the current log is absent) every 15 seconds. Players may optionally choose their RSI Launcher logs folder too; only `log.log` is read. Folder access is held in page memory only and ends when the page closes; the app does not install a background service, start with Windows, inspect game memory, scan AppData, or upload logs.
 
+When monitored log evidence changes, Citizen Health displays an in-app notice for a new session, disconnect, normal exit, or recognized crash signature. It never requests operating-system notification permission or creates background notifications.
+
 The first player-log view is a session timeline: confirmed gameplay entry, in-game disconnects, and application exit markers. It intentionally does not infer player actions, missions, locations, or causes that the logs do not establish.
 
 Player history is off by default. When enabled, it stores up to 100 compact records in the browser on that PC: session-start time, latest observed outcome, finding titles, and update time. It never stores raw logs, source paths, complete evidence lines, or binary dumps. Users can disable future recording or delete all stored history from the app.
