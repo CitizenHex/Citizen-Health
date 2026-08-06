@@ -47,6 +47,10 @@ Open `http://127.0.0.1:4173`. The server binds only to the local machine and the
 npm test
 ```
 
+## Desktop app foundation
+
+Citizen Health is transitioning from a local web prototype to a Tauri desktop app. The foundation is in `src-tauri` and intentionally grants only the native open-dialog permission; it has no filesystem or network capability yet. Building the Windows app requires Rust and the Tauri JavaScript dependencies.
+
 ## Status
 
 Early scaffold—not yet a diagnostic authority. Rules and remediation links require versioned review as Star Citizen changes.

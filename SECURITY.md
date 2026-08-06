@@ -19,3 +19,7 @@ Citizen Health is a passive diagnostics reader. These constraints are product re
 - Scanning game folders or the broader filesystem without a user-selected location and clear consent.
 
 Any future feature that crosses this boundary requires rejection or a separate product. Diagnostic rules must cite observable evidence, state uncertainty, and avoid presenting correlation as a confirmed cause.
+
+## Desktop foundation
+
+The Tauri desktop foundation starts with only native open-dialog capability. It grants no filesystem, shell, process, network, updater, or automatic-start permission. Future native monitoring must receive a separate capability scoped to user-approved `LIVE` and launcher-log folders only; it must never grant a broad home-directory or drive-wide scope.
