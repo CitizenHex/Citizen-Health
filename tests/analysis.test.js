@@ -8,8 +8,23 @@ test("classifies explicit memory failures with high confidence", () => {
   assert.equal(report.findings[0].confidence, "high");
 });
 
+test("recognizes Star Citizen's documented engine crash statuses", () => {
+  const watchdog = analyze([{ name: "Game.log", text: "STATUS_CRYENGINE_WATCH_DOG (0x2BADFF60)" }]);
+  const fatal = analyze([{ name: "Game.log", text: "Launcher exit 732819469 STATUS_CRYENGINE_FATAL_ERROR" }]);
+  const memory = analyze([{ name: "Game.log", text: "STATUS_CRYENGINE_OUT_OF_SYSMEM 0x2BADFF61" }]);
+  assert.equal(watchdog.findings[0].id, "cryengine-watchdog");
+  assert.equal(fatal.findings[0].id, "cryengine-fatal");
+  assert.equal(memory.findings[0].id, "oom");
+});
+
 test("does not overstate an access violation", () => {
   const report = analyze([{ name: "Game.log", text: "EXCEPTION_ACCESS_VIOLATION 0xc0000005" }]);
+  assert.equal(report.findings[0].confidence, "low");
+});
+
+test("recognizes the launcher's decimal access-violation code", () => {
+  const report = analyze([{ name: "log.log", text: "Star Citizen process exited abnormally (code: 3221225477)" }]);
+  assert.equal(report.findings[0].id, "access");
   assert.equal(report.findings[0].confidence, "low");
 });
 
