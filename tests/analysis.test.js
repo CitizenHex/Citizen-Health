@@ -37,11 +37,16 @@ test("uses only the newest dated Game backup", () => {
 });
 
 test("redacts common personal data", () => {
-  const text = redact("C:\\Users\\Alex\\Games email alex@example.com ip 192.168.1.10 token=secret");
+  const text = redact("C:\\Users\\Alex\\Games email alex@example.com ip 192.168.1.10 token=secret nickname=\"Zero-Divided\" playerGEID=203604417221 session=935f277a3b36a4bb22ea0260bcfaeb50 node_id=9946df2f-a529-68ba-02a5-908068bf128d");
   assert.equal(text.includes("Alex"), false);
   assert.equal(text.includes("alex@example.com"), false);
   assert.equal(text.includes("192.168.1.10"), false);
   assert.equal(text.includes("secret"), false);
+  assert.equal(text.includes("Zero-Divided"), false);
+  assert.equal(text.includes("203604417221"), false);
+  assert.equal(text.includes("935f277a3b36a4bb22ea0260bcfaeb50"), false);
+  assert.equal(text.includes("$1"), false);
+  assert.match(text, /nickname=\[REDACTED\]/);
 });
 
 test("extracts a minimal DxDiag snapshot without treating it as a diagnosis", () => {

@@ -6,6 +6,8 @@ const selected = document.querySelector("#selected");
 const snapshot = document.querySelector("#snapshot");
 const session = document.querySelector("#session");
 let report;
+const supportedExtensions = /\.(log|txt|json|xml)$/i;
+const maxTextFileSize = 25 * 1024 * 1024;
 
 input.addEventListener("change", () => {
   selected.replaceChildren(...[...input.files].map(file => Object.assign(document.createElement("li"), { textContent: `${file.name} · ${Math.ceil(file.size / 1024)} KB` })));
@@ -13,12 +15,12 @@ input.addEventListener("change", () => {
 });
 
 button.addEventListener("click", async () => {
-  const allowed = [...input.files].filter(file => !/\.(dmp|mdmp)$/i.test(file.name));
+  const allowed = [...input.files].filter(file => supportedExtensions.test(file.name) && file.size <= maxTextFileSize);
   const skipped = input.files.length - allowed.length;
   const files = await Promise.all(allowed.map(async file => ({ name: file.name, text: await file.text() })));
   if (!files.length) return;
   report = analyze(files);
-  document.querySelector("#summary").textContent = `${report.findings.length} finding${report.findings.length === 1 ? "" : "s"} from ${report.fileNames.length} analyzed text file${report.fileNames.length === 1 ? "" : "s"}.${report.skippedFileNames.length ? ` ${report.skippedFileNames.length} older Game log backup${report.skippedFileNames.length === 1 ? " was" : "s were"} left out; only the newest was analyzed.` : ""}${skipped ? ` ${skipped} binary dump file${skipped === 1 ? " was" : "s were"} intentionally excluded from analysis and export.` : ""} Confidence describes evidence strength, not severity.`;
+  document.querySelector("#summary").textContent = `${report.findings.length} finding${report.findings.length === 1 ? "" : "s"} from ${report.fileNames.length} analyzed text file${report.fileNames.length === 1 ? "" : "s"}.${report.skippedFileNames.length ? ` ${report.skippedFileNames.length} older Game log backup${report.skippedFileNames.length === 1 ? " was" : "s were"} left out; only the newest was analyzed.` : ""}${skipped ? ` ${skipped} unsupported, binary, or over-25 MB file${skipped === 1 ? " was" : "s were"} intentionally excluded from analysis and export.` : ""} Confidence describes evidence strength, not severity.`;
   document.querySelector("#findings").replaceChildren(...report.findings.map(finding => {
     const card = document.createElement("article");
     card.innerHTML = `<div><span class="confidence ${finding.confidence}">${finding.confidence} confidence</span><h3>${finding.title}</h3></div><p><strong>Evidence:</strong> ${finding.evidence}</p><p><strong>Next step:</strong> ${finding.action}</p><a href="${finding.link}" target="_blank" rel="noreferrer">Official remediation guidance ↗</a>`;

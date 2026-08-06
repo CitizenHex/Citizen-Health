@@ -11,6 +11,8 @@ Citizen Health is an independent, read-only Star Citizen crash and performance c
 - No upload or telemetry by default
 - No automatic filesystem scanning; users choose every input
 
+Only `.log`, `.txt`, `.json`, and `.xml` text files at or below 25 MB are read. Binary dumps, executables, archives, and oversized files remain untouched and are excluded from export.
+
 See [SECURITY.md](SECURITY.md) for the enforceable product policy.
 
 ## MVP scope
