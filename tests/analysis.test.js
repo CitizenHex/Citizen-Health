@@ -13,6 +13,12 @@ test("does not overstate an access violation", () => {
   assert.equal(report.findings[0].confidence, "low");
 });
 
+test("recognizes a clean game exit instead of calling it a network failure", () => {
+  const report = analyze([{ name: "Game.log", text: "<SystemQuit> cause=30016, reason=Quit via console command, exitCode=0\nSystem Fast Shutdown" }]);
+  assert.deepEqual(report.findings.map(finding => finding.id), ["controlled-exit"]);
+  assert.equal(report.findings[0].confidence, "high");
+});
+
 test("redacts common personal data", () => {
   const text = redact("C:\\Users\\Alex\\Games email alex@example.com ip 192.168.1.10 token=secret");
   assert.equal(text.includes("Alex"), false);

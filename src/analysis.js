@@ -1,4 +1,5 @@
 const rules = [
+  { id: "controlled-exit", confidence: "high", title: "Controlled client shutdown — not a crash", pattern: /(systemquit.*exitcode=0|cause=30016.*player requested disconnect)/i, evidence: "The game log records a normal exit code or a player-requested disconnect followed by shutdown.", action: "No crash remediation is indicated from this session. If the exit was unexpected, collect the matching launcher log and any crash-handler text from the same time window.", link: "https://support.robertsspaceindustries.com/hc/en-us/articles/360000065688-Send-In-Game-Files-for-RSI-Support" },
   { id: "oom", confidence: "high", title: "Memory or pagefile exhaustion", pattern: /(out of memory|is out of system memory|failed to allocate|pagefile)/i, evidence: "The logs contain an explicit memory-allocation failure.", action: "Check that the Windows pagefile is system-managed and that the game drive has free space.", link: "https://support.robertsspaceindustries.com/hc/en-us/articles/360000083387-Out-of-memory-errors-set-your-pagefile" },
   { id: "gpu", confidence: "medium", title: "Graphics driver or rendering API failure", pattern: /(device removed|device hung|dxgi_error|gpu crash|vulkan.*(error|failed))/i, evidence: "The logs contain a graphics device or rendering API failure.", action: "Update the GPU driver, then retry the alternate supported graphics API if the issue continues.", link: "https://support.robertsspaceindustries.com/hc/en-us/articles/360056254754-Star-Citizen-Alpha-Known-Issues" },
   { id: "verify", confidence: "medium", title: "Damaged or missing game data", pattern: /(data\.p4k.*(corrupt|error)|missing file|pak.*(corrupt|failed)|verify.*files)/i, evidence: "The selected evidence mentions missing or unreadable game data.", action: "Use the RSI Launcher verification flow before reinstalling the game.", link: "https://support.robertsspaceindustries.com/hc/en-us/articles/360000161747-Troubleshoot-the-RSI-Launcher" },
@@ -34,7 +35,8 @@ export function parseDxDiag(text) {
 
 export function analyze(files) {
   const joined = files.map(file => `--- ${file.name} ---\n${file.text}`).join("\n");
-  const findings = rules.filter(rule => rule.pattern.test(joined)).map(({ pattern, ...finding }) => finding);
+  let findings = rules.filter(rule => rule.pattern.test(joined)).map(({ pattern, ...finding }) => finding);
+  if (findings.some(finding => finding.id === "controlled-exit")) findings = findings.filter(finding => finding.id !== "network");
   if (!findings.length) findings.push({ id: "unknown", confidence: "low", title: "No recognized cause", evidence: "The selected files do not contain a supported diagnostic signature.", action: "Add Game.log, launcher log, crash-handler text, and DxDiag if available. Do not assume the PC is at fault.", link: "https://support.robertsspaceindustries.com/hc/en-us/articles/360000065688-Send-In-Game-Files-for-RSI-Support" });
   const dxDiag = files.find(file => /dxdiag/i.test(file.name));
   return { createdAt: new Date().toISOString(), fileNames: files.map(file => file.name), findings, hardwareSnapshot: dxDiag ? parseDxDiag(dxDiag.text) : {}, redactedEvidence: redact(joined) };
