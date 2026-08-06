@@ -5,6 +5,7 @@ const analyzeButton = document.querySelector("#analyze");
 const selected = document.querySelector("#selected");
 const selectionStatus = document.querySelector("#selection-status");
 const liveFolderButton = document.querySelector("#choose-live-folder");
+const launcherFolderButton = document.querySelector("#choose-launcher-folder");
 const monitorButton = document.querySelector("#monitor-live-folder");
 const monitorStatus = document.querySelector("#monitor-status");
 const keepHistory = document.querySelector("#keep-history");
@@ -18,8 +19,9 @@ const supportedExtensions = /\.(log|txt|json|xml)$/i;
 const maxTextFileSize = 25 * 1024 * 1024;
 let report;
 let liveDirectory;
+let launcherDirectory;
 let monitorTimer;
-let lastObservedLog;
+let lastObservedFingerprint;
 const historyKey = "citizen-health.session-history.v1";
 const historyEnabledKey = "citizen-health.session-history-enabled.v1";
 
@@ -123,16 +125,25 @@ async function latestGameLogFrom(directory) {
   return candidates.toSorted((a, b) => b.lastModified - a.lastModified)[0];
 }
 
+async function launcherLogFrom(directory) {
+  const entries = [];
+  for await (const [name, handle] of directory.entries()) entries.push({ name, handle });
+  const log = entries.find(entry => entry.handle.kind === "file" && entry.name.toLowerCase() === "log.log");
+  return log ? log.handle.getFile() : undefined;
+}
+
 async function checkLiveFolder() {
   if (!liveDirectory) return;
   const gameLog = await latestGameLogFrom(liveDirectory);
   if (!gameLog) { monitorStatus.textContent = "No Game.log or Game backup found in the selected LIVE folder."; return; }
   if (gameLog.size > maxTextFileSize) { monitorStatus.textContent = "The newest Game log is over 25 MB and was not read."; return; }
-  const fingerprint = `${gameLog.name}:${gameLog.size}:${gameLog.lastModified}`;
-  if (fingerprint === lastObservedLog) return;
-  lastObservedLog = fingerprint;
-  renderReport(analyze([await fileForAnalysis(gameLog)]));
-  monitorStatus.textContent = `Monitoring this LIVE folder while Citizen Health stays open. Last analyzed: ${gameLog.name}.`;
+  const launcherLog = launcherDirectory ? await launcherLogFrom(launcherDirectory) : undefined;
+  const readableLauncher = launcherLog && launcherLog.size <= maxTextFileSize ? launcherLog : undefined;
+  const fingerprint = [gameLog, readableLauncher].filter(Boolean).map(file => `${file.name}:${file.size}:${file.lastModified}`).join("|");
+  if (fingerprint === lastObservedFingerprint) return;
+  lastObservedFingerprint = fingerprint;
+  renderReport(analyze(await Promise.all([gameLog, readableLauncher].filter(Boolean).map(fileForAnalysis))));
+  monitorStatus.textContent = `Monitoring Game.log${readableLauncher ? " and launcher log.log" : ""} while Citizen Health stays open. Last analyzed: ${gameLog.name}.`;
 }
 
 input.addEventListener("change", updateSelection);
@@ -165,6 +176,18 @@ liveFolderButton.addEventListener("click", async () => {
     monitorStatus.textContent = `Selected ${liveDirectory.name}. Monitoring is off until you enable it.`;
   } catch (error) {
     if (error.name !== "AbortError") monitorStatus.textContent = "Citizen Health could not open that folder.";
+  }
+});
+
+launcherFolderButton.addEventListener("click", async () => {
+  if (!window.showDirectoryPicker) { monitorStatus.textContent = "Folder monitoring needs a current Chromium browser opened through Start-Citizen-Health.cmd."; return; }
+  try {
+    launcherDirectory = await window.showDirectoryPicker({ mode: "read" });
+    lastObservedFingerprint = undefined;
+    monitorStatus.textContent = `Launcher folder ${launcherDirectory.name} selected. Monitoring will include log.log when enabled.`;
+    if (monitorTimer) await checkLiveFolder();
+  } catch (error) {
+    if (error.name !== "AbortError") monitorStatus.textContent = "Citizen Health could not open that launcher folder.";
   }
 });
 
