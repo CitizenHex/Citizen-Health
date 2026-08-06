@@ -48,11 +48,25 @@ function parseSession(file) {
   }).filter(([, value]) => value !== undefined));
 }
 
+function gameLogDate(file) {
+  const match = file.name.match(/(\d{2})\s+([A-Za-z]{3})\s+(\d{2})\s+\((\d{2})\s+(\d{2})\s+(\d{2})\)/);
+  if (match) return Date.parse(`${match[1]} ${match[2]} 20${match[3]} ${match[4]}:${match[5]}:${match[6]} UTC`);
+  return file.lastModified || 0;
+}
+
+export function selectLatestGameLog(files) {
+  const gameLogs = files.filter(file => /^game(?:\s|\.|$)/i.test(file.name) && /\.log$/i.test(file.name));
+  if (gameLogs.length < 2) return { files, skippedFileNames: [] };
+  const latest = gameLogs.toSorted((a, b) => gameLogDate(b) - gameLogDate(a))[0];
+  return { files: files.filter(file => !gameLogs.includes(file) || file === latest), skippedFileNames: gameLogs.filter(file => file !== latest).map(file => file.name) };
+}
+
 export function analyze(files) {
-  const joined = files.map(file => `--- ${file.name} ---\n${file.text}`).join("\n");
+  const selection = selectLatestGameLog(files);
+  const joined = selection.files.map(file => `--- ${file.name} ---\n${file.text}`).join("\n");
   let findings = rules.filter(rule => rule.pattern.test(joined)).map(({ pattern, ...finding }) => ({ ...finding, evidenceLines: evidenceLines(joined, pattern) }));
   if (findings.some(finding => finding.id === "controlled-exit")) findings = findings.filter(finding => finding.id !== "network");
   if (!findings.length) findings.push({ id: "unknown", confidence: "low", title: "No recognized cause", evidence: "The selected files do not contain a supported diagnostic signature.", evidenceLines: [], action: "Add Game.log, launcher log, crash-handler text, and DxDiag if available. Do not assume the PC is at fault.", link: "https://support.robertsspaceindustries.com/hc/en-us/articles/360000065688-Send-In-Game-Files-for-RSI-Support" });
-  const dxDiag = files.find(file => /dxdiag/i.test(file.name));
-  return { createdAt: new Date().toISOString(), fileNames: files.map(file => file.name), findings, session: parseSession(files.find(file => /game/i.test(file.name))), hardwareSnapshot: dxDiag ? parseDxDiag(dxDiag.text) : {}, redactedEvidence: redact(joined) };
+  const dxDiag = selection.files.find(file => /dxdiag/i.test(file.name));
+  return { createdAt: new Date().toISOString(), fileNames: selection.files.map(file => file.name), skippedFileNames: selection.skippedFileNames, findings, session: parseSession(selection.files.find(file => /game/i.test(file.name))), hardwareSnapshot: dxDiag ? parseDxDiag(dxDiag.text) : {}, redactedEvidence: redact(joined) };
 }

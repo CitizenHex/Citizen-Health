@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { analyze, parseDxDiag, redact } from "../src/analysis.js";
+import { analyze, parseDxDiag, redact, selectLatestGameLog } from "../src/analysis.js";
 
 test("classifies explicit memory failures with high confidence", () => {
   const report = analyze([{ name: "Game.log", text: "Fatal: Out of memory; failed to allocate 8192 bytes" }]);
@@ -24,6 +24,16 @@ test("recognizes a clean game exit instead of calling it a network failure", () 
 test("does not call an in-game Socpak link warning damaged game data", () => {
   const report = analyze([{ name: "Game.log", text: "Socpak(Data/objectcontainers/example.socpak) - Failed to link to exported shop when loading" }]);
   assert.equal(report.findings[0].id, "unknown");
+});
+
+test("uses only the newest dated Game backup", () => {
+  const oldLog = { name: "Game Build(1) 01 Aug 26 (10 00 00).log", text: "out of memory" };
+  const newLog = { name: "Game Build(2) 04 Aug 26 (12 00 00).log", text: "<SystemQuit> exitCode=0" };
+  const selection = selectLatestGameLog([oldLog, newLog]);
+  assert.deepEqual(selection.files, [newLog]);
+  const report = analyze([oldLog, newLog]);
+  assert.deepEqual(report.findings.map(finding => finding.id), ["controlled-exit"]);
+  assert.deepEqual(report.skippedFileNames, [oldLog.name]);
 });
 
 test("redacts common personal data", () => {

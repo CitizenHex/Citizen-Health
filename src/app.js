@@ -18,7 +18,7 @@ button.addEventListener("click", async () => {
   const files = await Promise.all(allowed.map(async file => ({ name: file.name, text: await file.text() })));
   if (!files.length) return;
   report = analyze(files);
-  document.querySelector("#summary").textContent = `${report.findings.length} finding${report.findings.length === 1 ? "" : "s"} from ${files.length} selected text file${files.length === 1 ? "" : "s"}.${skipped ? ` ${skipped} binary dump file${skipped === 1 ? " was" : "s were"} intentionally excluded from analysis and export.` : ""} Confidence describes evidence strength, not severity.`;
+  document.querySelector("#summary").textContent = `${report.findings.length} finding${report.findings.length === 1 ? "" : "s"} from ${report.fileNames.length} analyzed text file${report.fileNames.length === 1 ? "" : "s"}.${report.skippedFileNames.length ? ` ${report.skippedFileNames.length} older Game log backup${report.skippedFileNames.length === 1 ? " was" : "s were"} left out; only the newest was analyzed.` : ""}${skipped ? ` ${skipped} binary dump file${skipped === 1 ? " was" : "s were"} intentionally excluded from analysis and export.` : ""} Confidence describes evidence strength, not severity.`;
   document.querySelector("#findings").replaceChildren(...report.findings.map(finding => {
     const card = document.createElement("article");
     card.innerHTML = `<div><span class="confidence ${finding.confidence}">${finding.confidence} confidence</span><h3>${finding.title}</h3></div><p><strong>Evidence:</strong> ${finding.evidence}</p><p><strong>Next step:</strong> ${finding.action}</p><a href="${finding.link}" target="_blank" rel="noreferrer">Official remediation guidance ↗</a>`;
