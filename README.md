@@ -25,6 +25,8 @@ The redacted export is JSON so users can inspect it before sharing. It contains 
 
 Requires Node.js 20 or newer.
 
+On this development PC, the simplest option is to double-click `Start-Citizen-Health.cmd`. It starts the local-only site and opens the correct browser address. Do not open `index.html` directly: browsers may render the page without running its local analysis code.
+
 ```powershell
 npm start
 ```
