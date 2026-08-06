@@ -16,6 +16,7 @@
       <button id="choose-live-folder" type="button">Choose LIVE folder</button>
       <button id="choose-launcher-folder" type="button" class="secondary">Add launcher logs folder</button>
       <button id="monitor-live-folder" type="button" class="secondary" disabled>Enable local monitoring</button>
+      <button id="forget-folders" type="button" class="secondary" disabled>Forget selected folders</button>
       <p id="monitor-status" class="selection-status">Monitoring is off. No folder access has been granted.</p><small>Launcher logs are optional. If added, choose the folder that contains `log.log`.</small>
     </section>
     <section class="panel">
@@ -26,14 +27,19 @@
       <ul id="history-list" class="selected"></ul>
     </section>
     <section class="panel">
-      <div><span class="step">03</span><h2>Analyze selected files</h2><p>Use this for a one-off report or to add a launcher log and DxDiag.</p></div>
+      <div><span class="step">03</span><h2>Local privacy status</h2><p>A plain-language view of what Citizen Health can access during this browser session.</p></div>
+      <dl id="privacy-status" class="snapshot"></dl>
+      <small>Folder selections and analyzed reports stay in page memory. Closing this tab clears them. Local session history is the only optional browser storage.</small>
+    </section>
+    <section class="panel">
+      <div><span class="step">04</span><h2>Analyze selected files</h2><p>Use this for a one-off report or to add a launcher log and DxDiag.</p></div>
       <div class="picker"><input id="files" type="file" multiple accept=".log,.txt,.json,.xml,.dmp,.mdmp" style="position:static; opacity:1;"><span>Choose logs and diagnostics</span><small>Game.log, launcher log, crash-handler text, optional DxDiag. Binary dumps are not read or exported.</small></div>
       <ul id="selected" class="selected"></ul>
       <p id="selection-status" class="selection-status">No files selected yet.</p>
       <button id="analyze" disabled>Analyze selected files</button>
     </section>
     <section id="results" class="panel hidden" aria-live="polite">
-      <div class="result-head"><div><span class="step">04</span><h2>Evidence-based findings</h2></div><button id="export" class="secondary">Export redacted bundle</button></div>
+      <div class="result-head"><div><span class="step">05</span><h2>Evidence-based findings</h2></div><button id="export" class="secondary">Export redacted bundle</button></div>
       <p id="summary"></p><div id="findings" class="findings"></div>
       <section id="session-section" class="hidden"><h3>Session context</h3><dl id="session" class="snapshot"></dl></section>
       <section id="timeline-section" class="hidden"><h3>Local session timeline</h3><ul id="session-timeline" class="selected"></ul></section>
@@ -42,6 +48,6 @@
     </section>
   </main>
   <footer>Citizen Health is an independent fan-made companion and is not affiliated with Cloud Imperium Games.</footer>
-  <script type="module" src="src/app.js?v=6"></script>
+  <script type="module" src="src/app.js?v=7"></script>
 </body>
 </html>

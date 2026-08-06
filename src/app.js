@@ -7,12 +7,14 @@ const selectionStatus = document.querySelector("#selection-status");
 const liveFolderButton = document.querySelector("#choose-live-folder");
 const launcherFolderButton = document.querySelector("#choose-launcher-folder");
 const monitorButton = document.querySelector("#monitor-live-folder");
+const forgetFoldersButton = document.querySelector("#forget-folders");
 const monitorStatus = document.querySelector("#monitor-status");
 const activityNotice = document.querySelector("#activity-notice");
 const keepHistory = document.querySelector("#keep-history");
 const clearHistory = document.querySelector("#clear-history");
 const historyStatus = document.querySelector("#history-status");
 const historyList = document.querySelector("#history-list");
+const privacyStatus = document.querySelector("#privacy-status");
 const snapshot = document.querySelector("#snapshot");
 const session = document.querySelector("#session");
 const timeline = document.querySelector("#session-timeline");
@@ -45,6 +47,18 @@ function renderHistory() {
   historyStatus.textContent = keepHistory.checked
     ? `${records.length} local session record${records.length === 1 ? "" : "s"}. Raw logs are not retained.`
     : "History is off. Existing local records remain until deleted.";
+}
+
+function renderPrivacyStatus() {
+  renderKeyValues(privacyStatus, {
+    liveFolder: liveDirectory ? "Selected for this tab" : "Not selected",
+    launcherFolder: launcherDirectory ? "Selected for this tab" : "Not selected",
+    monitoring: monitorTimer ? "On while this tab stays open" : "Off",
+    analyzedReport: report ? "In this tab only" : "None",
+    localHistory: keepHistory.checked ? `${loadHistory().length} compact record${loadHistory().length === 1 ? "" : "s"}` : "Off",
+    networkUploads: "Never"
+  });
+  forgetFoldersButton.disabled = !liveDirectory && !launcherDirectory;
 }
 
 function recordLatestSession(nextReport) {
@@ -109,7 +123,14 @@ function renderReport(nextReport, skipped = 0, automated = false) {
   document.querySelector("#summary").textContent = `${report.findings.length} finding${report.findings.length === 1 ? "" : "s"} from ${report.fileNames.length} analyzed text file${report.fileNames.length === 1 ? "" : "s"}.${report.skippedFileNames.length ? ` ${report.skippedFileNames.length} older Game log backup${report.skippedFileNames.length === 1 ? " was" : "s were"} left out; only the newest was analyzed.` : ""}${skipped ? ` ${skipped} unsupported, binary, or over-25 MB file${skipped === 1 ? " was" : "s were"} intentionally excluded.` : ""} Confidence describes evidence strength, not severity.`;
   document.querySelector("#findings").replaceChildren(...report.findings.map(finding => {
     const card = document.createElement("article");
-    card.innerHTML = `<div><span class="confidence ${finding.confidence}">${finding.confidence} confidence</span><h3>${finding.title}</h3></div><p><strong>Evidence:</strong> ${finding.evidence}</p><p><strong>Next step:</strong> ${finding.action}</p><a href="${finding.link}" target="_blank" rel="noreferrer">Official remediation guidance</a>`;
+    const heading = document.createElement("div");
+    const confidence = document.createElement("span"); confidence.className = `confidence ${finding.confidence}`; confidence.textContent = `${finding.confidence} confidence`;
+    const title = document.createElement("h3"); title.textContent = finding.title;
+    heading.append(confidence, title);
+    const evidence = document.createElement("p"); const evidenceStrong = document.createElement("strong"); evidenceStrong.textContent = "Evidence: "; evidence.append(evidenceStrong, finding.evidence);
+    const action = document.createElement("p"); const actionStrong = document.createElement("strong"); actionStrong.textContent = "Next step: "; action.append(actionStrong, finding.action);
+    const link = document.createElement("a"); link.href = finding.link; link.target = "_blank"; link.rel = "noreferrer"; link.textContent = "Official remediation guidance";
+    card.append(heading, evidence, action, link);
     if (finding.evidenceLines.length) {
       const lines = document.createElement("pre"); lines.className = "evidence-lines";
       lines.textContent = finding.evidenceLines.join("\n"); card.append(lines);
@@ -128,6 +149,7 @@ function renderReport(nextReport, skipped = 0, automated = false) {
   document.querySelector("#snapshot-section").classList.toggle("hidden", !snapshot.children.length);
   document.querySelector("#redaction").textContent = report.redactedEvidence.slice(0, 5000);
   document.querySelector("#results").classList.remove("hidden");
+  renderPrivacyStatus();
 }
 
 async function fileForAnalysis(file) {
@@ -172,15 +194,18 @@ input.addEventListener("input", updateSelection);
 
 keepHistory.checked = localStorage.getItem(historyEnabledKey) === "true";
 renderHistory();
+renderPrivacyStatus();
 keepHistory.addEventListener("change", () => {
   localStorage.setItem(historyEnabledKey, String(keepHistory.checked));
   if (keepHistory.checked && report) recordLatestSession(report);
   renderHistory();
+  renderPrivacyStatus();
 });
 clearHistory.addEventListener("click", () => {
   if (!window.confirm("Delete all Citizen Health session history stored in this browser? This cannot be undone.")) return;
   localStorage.removeItem(historyKey);
   renderHistory();
+  renderPrivacyStatus();
 });
 
 analyzeButton.addEventListener("click", async () => {
@@ -195,6 +220,7 @@ liveFolderButton.addEventListener("click", async () => {
     liveDirectory = await window.showDirectoryPicker({ mode: "read" });
     monitorButton.disabled = false;
     monitorStatus.textContent = `Selected ${liveDirectory.name}. Monitoring is off until you enable it.`;
+    renderPrivacyStatus();
   } catch (error) {
     if (error.name !== "AbortError") monitorStatus.textContent = "Citizen Health could not open that folder.";
   }
@@ -206,6 +232,7 @@ launcherFolderButton.addEventListener("click", async () => {
     launcherDirectory = await window.showDirectoryPicker({ mode: "read" });
     lastObservedFingerprint = undefined;
     monitorStatus.textContent = `Launcher folder ${launcherDirectory.name} selected. Monitoring will include log.log when enabled.`;
+    renderPrivacyStatus();
     if (monitorTimer) await checkLiveFolder();
   } catch (error) {
     if (error.name !== "AbortError") monitorStatus.textContent = "Citizen Health could not open that launcher folder.";
@@ -213,10 +240,26 @@ launcherFolderButton.addEventListener("click", async () => {
 });
 
 monitorButton.addEventListener("click", async () => {
-  if (monitorTimer) { clearInterval(monitorTimer); monitorTimer = undefined; monitorButton.textContent = "Enable local monitoring"; monitorStatus.textContent = "Monitoring stopped. Folder access ends when the page closes."; return; }
+  if (monitorTimer) { clearInterval(monitorTimer); monitorTimer = undefined; monitorButton.textContent = "Enable local monitoring"; monitorStatus.textContent = "Monitoring stopped. Folder access ends when the page closes."; renderPrivacyStatus(); return; }
   await checkLiveFolder();
   monitorTimer = setInterval(checkLiveFolder, 15000);
   monitorButton.textContent = "Stop local monitoring";
+  renderPrivacyStatus();
+});
+
+forgetFoldersButton.addEventListener("click", () => {
+  if (monitorTimer) clearInterval(monitorTimer);
+  monitorTimer = undefined;
+  liveDirectory = undefined;
+  launcherDirectory = undefined;
+  lastObservedFingerprint = undefined;
+  lastActivityKey = undefined;
+  monitorButton.disabled = true;
+  monitorButton.textContent = "Enable local monitoring";
+  monitorStatus.textContent = "Selected folders have been forgotten. No folder access remains in this tab.";
+  activityNotice.classList.add("hidden");
+  activityNotice.textContent = "";
+  renderPrivacyStatus();
 });
 
 document.querySelector("#export").addEventListener("click", () => {
