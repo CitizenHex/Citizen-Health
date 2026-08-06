@@ -11,14 +11,20 @@
   <main>
     <section class="safety"><strong>Read-only by design</strong><span>No injection</span><span>No memory access</span><span>No automation</span><span>No uploads</span></section>
     <section class="panel">
-      <div><span class="step">01</span><h2>Analyze latest crash</h2><p>Select the evidence you want analyzed. Files remain in this browser tab.</p></div>
+      <div><span class="step">01</span><h2>Optional local monitoring</h2><p>Choose your Star Citizen LIVE folder once. Citizen Health reads only the newest Game log while this page is open.</p></div>
+      <button id="choose-live-folder" type="button">Choose LIVE folder</button>
+      <button id="monitor-live-folder" type="button" class="secondary" disabled>Enable local monitoring</button>
+      <p id="monitor-status" class="selection-status">Monitoring is off. No folder access has been granted.</p>
+    </section>
+    <section class="panel">
+      <div><span class="step">02</span><h2>Analyze selected files</h2><p>Use this for a one-off report or to add a launcher log and DxDiag.</p></div>
       <div class="picker"><input id="files" type="file" multiple accept=".log,.txt,.json,.xml,.dmp,.mdmp" style="position:static; opacity:1;"><span>Choose logs and diagnostics</span><small>Game.log, launcher log, crash-handler text, optional DxDiag. Binary dumps are not read or exported.</small></div>
       <ul id="selected" class="selected"></ul>
       <p id="selection-status" class="selection-status">No files selected yet.</p>
       <button id="analyze" disabled>Analyze selected files</button>
     </section>
     <section id="results" class="panel hidden" aria-live="polite">
-      <div class="result-head"><div><span class="step">02</span><h2>Evidence-based findings</h2></div><button id="export" class="secondary">Export redacted bundle</button></div>
+      <div class="result-head"><div><span class="step">03</span><h2>Evidence-based findings</h2></div><button id="export" class="secondary">Export redacted bundle</button></div>
       <p id="summary"></p><div id="findings" class="findings"></div>
       <section id="session-section" class="hidden"><h3>Session context</h3><dl id="session" class="snapshot"></dl></section>
       <section id="snapshot-section" class="hidden"><h3>DxDiag snapshot</h3><dl id="snapshot" class="snapshot"></dl></section>
@@ -26,6 +32,6 @@
     </section>
   </main>
   <footer>Citizen Health is an independent fan-made companion and is not affiliated with Cloud Imperium Games.</footer>
-  <script type="module" src="src/app.js?v=2"></script>
+  <script type="module" src="src/app.js?v=3"></script>
 </body>
 </html>
