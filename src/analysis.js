@@ -71,3 +71,17 @@ export function analyze(files) {
   const dxDiag = selection.files.find(file => /dxdiag/i.test(file.name));
   return { createdAt: new Date().toISOString(), fileNames: selection.files.map(file => file.name), skippedFileNames: selection.skippedFileNames, findings, session: parseSession(selection.files.find(file => /game/i.test(file.name))), hardwareSnapshot: dxDiag ? parseDxDiag(dxDiag.text) : {}, redactedEvidence: redact(joined) };
 }
+
+export function createExportBundle(report) {
+  return {
+    format: "citizen-health.redacted-report",
+    version: 1,
+    createdAt: report.createdAt,
+    analyzedFiles: report.fileNames,
+    skippedOlderGameLogs: report.skippedFileNames,
+    session: report.session,
+    hardwareSnapshot: report.hardwareSnapshot,
+    findings: report.findings.map(({ id, confidence, title, evidence, evidenceLines, action, link }) => ({ id, confidence, title, evidence, evidenceLines, action, remediationLink: link })),
+    privacy: "This export intentionally excludes complete source logs, binary dumps, and unrecognized raw data."
+  };
+}

@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { analyze, parseDxDiag, redact, selectLatestGameLog } from "../src/analysis.js";
+import { analyze, createExportBundle, parseDxDiag, redact, selectLatestGameLog } from "../src/analysis.js";
 
 test("classifies explicit memory failures with high confidence", () => {
   const report = analyze([{ name: "Game.log", text: "Fatal: Out of memory; failed to allocate 8192 bytes" }]);
@@ -34,6 +34,15 @@ test("uses only the newest dated Game backup", () => {
   const report = analyze([oldLog, newLog]);
   assert.deepEqual(report.findings.map(finding => finding.id), ["controlled-exit"]);
   assert.deepEqual(report.skippedFileNames, [oldLog.name]);
+});
+
+test("export contains only the minimal redacted report, never full raw log content", () => {
+  const secret = "private-unrecognized-raw-log-content";
+  const report = analyze([{ name: "Game.log", text: `${secret}\nEXCEPTION_ACCESS_VIOLATION` }]);
+  const exported = JSON.stringify(createExportBundle(report));
+  assert.equal(exported.includes(secret), false);
+  assert.equal(exported.includes("redactedEvidence"), false);
+  assert.equal(exported.includes("EXCEPTION_ACCESS_VIOLATION"), true);
 });
 
 test("redacts common personal data", () => {

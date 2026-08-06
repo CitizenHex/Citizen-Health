@@ -1,4 +1,4 @@
-import { analyze } from "./analysis.js";
+import { analyze, createExportBundle } from "./analysis.js";
 
 const input = document.querySelector("#files");
 const button = document.querySelector("#analyze");
@@ -52,7 +52,7 @@ button.addEventListener("click", async () => {
 
 document.querySelector("#export").addEventListener("click", () => {
   if (!report) return;
-  const blob = new Blob([JSON.stringify(report, null, 2)], { type: "application/json" });
+  const blob = new Blob([JSON.stringify(createExportBundle(report), null, 2)], { type: "application/json" });
   const link = Object.assign(document.createElement("a"), { href: URL.createObjectURL(blob), download: `citizen-health-${Date.now()}.redacted.json` });
   link.click(); URL.revokeObjectURL(link.href);
 });
