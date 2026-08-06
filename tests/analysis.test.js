@@ -14,9 +14,16 @@ test("does not overstate an access violation", () => {
 });
 
 test("recognizes a clean game exit instead of calling it a network failure", () => {
-  const report = analyze([{ name: "Game.log", text: "<SystemQuit> cause=30016, reason=Quit via console command, exitCode=0\nSystem Fast Shutdown" }]);
+  const report = analyze([{ name: "Game Build(12345678).log", text: "<2026-08-05T00:00:00.000Z> Starting\n<2026-08-05T00:05:25.000Z> <SystemQuit> cause=30016, reason=Quit via console command, exitCode=0\nSystem Fast Shutdown" }]);
   assert.deepEqual(report.findings.map(finding => finding.id), ["controlled-exit"]);
   assert.equal(report.findings[0].confidence, "high");
+  assert.equal(report.findings[0].evidenceLines.length, 1);
+  assert.deepEqual(report.session, { build: "12345678", startedAt: "2026-08-05T00:00:00.000Z", endedAt: "2026-08-05T00:05:25.000Z", durationMinutes: 5 });
+});
+
+test("does not call an in-game Socpak link warning damaged game data", () => {
+  const report = analyze([{ name: "Game.log", text: "Socpak(Data/objectcontainers/example.socpak) - Failed to link to exported shop when loading" }]);
+  assert.equal(report.findings[0].id, "unknown");
 });
 
 test("redacts common personal data", () => {

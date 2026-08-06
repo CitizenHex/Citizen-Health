@@ -4,6 +4,7 @@ const input = document.querySelector("#files");
 const button = document.querySelector("#analyze");
 const selected = document.querySelector("#selected");
 const snapshot = document.querySelector("#snapshot");
+const session = document.querySelector("#session");
 let report;
 
 input.addEventListener("change", () => {
@@ -21,8 +22,20 @@ button.addEventListener("click", async () => {
   document.querySelector("#findings").replaceChildren(...report.findings.map(finding => {
     const card = document.createElement("article");
     card.innerHTML = `<div><span class="confidence ${finding.confidence}">${finding.confidence} confidence</span><h3>${finding.title}</h3></div><p><strong>Evidence:</strong> ${finding.evidence}</p><p><strong>Next step:</strong> ${finding.action}</p><a href="${finding.link}" target="_blank" rel="noreferrer">Official remediation guidance ↗</a>`;
+    if (finding.evidenceLines.length) {
+      const lines = document.createElement("pre"); lines.className = "evidence-lines";
+      lines.textContent = finding.evidenceLines.join("\n"); card.append(lines);
+    }
     return card;
   }));
+  session.replaceChildren();
+  for (const [label, value] of Object.entries(report.session)) {
+    const item = document.createElement("div");
+    const term = document.createElement("dt"); term.textContent = label.replace(/([A-Z])/g, " $1");
+    const detail = document.createElement("dd"); detail.textContent = `${value}${label === "durationMinutes" ? " min" : ""}`;
+    item.append(term, detail); session.append(item);
+  }
+  document.querySelector("#session-section").classList.toggle("hidden", !session.children.length);
   snapshot.replaceChildren();
   for (const [label, value] of Object.entries(report.hardwareSnapshot)) {
     const item = document.createElement("div");
