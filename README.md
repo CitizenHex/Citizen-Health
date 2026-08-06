@@ -21,6 +21,8 @@ While the site is open, a player may explicitly choose their Star Citizen `LIVE`
 
 The first player-log view is a session timeline: confirmed gameplay entry, in-game disconnects, and application exit markers. It intentionally does not infer player actions, missions, locations, or causes that the logs do not establish.
 
+Player history is off by default. When enabled, it stores up to 100 compact records in the browser on that PC: session-start time, latest observed outcome, finding titles, and update time. It never stores raw logs, source paths, complete evidence lines, or binary dumps. Users can disable future recording or delete all stored history from the app.
+
 ## MVP scope
 
 The first flow accepts `Game.log`, RSI Launcher logs, crash-handler text/bundles, and optional DxDiag. Initial rules cover controlled client exits, CryEngine watchdog/fatal statuses, explicit memory pressure, graphics device/API failures, damaged game data, access violations, and connection/server-session symptoms. Unknown results remain unknown rather than blaming the user's PC.

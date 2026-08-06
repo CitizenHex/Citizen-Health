@@ -17,14 +17,21 @@
       <p id="monitor-status" class="selection-status">Monitoring is off. No folder access has been granted.</p>
     </section>
     <section class="panel">
-      <div><span class="step">02</span><h2>Analyze selected files</h2><p>Use this for a one-off report or to add a launcher log and DxDiag.</p></div>
+      <div><span class="step">02</span><h2>Optional player history</h2><p>Save a compact session timeline only on this PC. Raw logs and evidence text are never stored in history.</p></div>
+      <label><input id="keep-history" type="checkbox"> Keep local session history on this PC</label>
+      <button id="clear-history" type="button" class="secondary">Delete local history</button>
+      <p id="history-status" class="selection-status">History is off.</p>
+      <ul id="history-list" class="selected"></ul>
+    </section>
+    <section class="panel">
+      <div><span class="step">03</span><h2>Analyze selected files</h2><p>Use this for a one-off report or to add a launcher log and DxDiag.</p></div>
       <div class="picker"><input id="files" type="file" multiple accept=".log,.txt,.json,.xml,.dmp,.mdmp" style="position:static; opacity:1;"><span>Choose logs and diagnostics</span><small>Game.log, launcher log, crash-handler text, optional DxDiag. Binary dumps are not read or exported.</small></div>
       <ul id="selected" class="selected"></ul>
       <p id="selection-status" class="selection-status">No files selected yet.</p>
       <button id="analyze" disabled>Analyze selected files</button>
     </section>
     <section id="results" class="panel hidden" aria-live="polite">
-      <div class="result-head"><div><span class="step">03</span><h2>Evidence-based findings</h2></div><button id="export" class="secondary">Export redacted bundle</button></div>
+      <div class="result-head"><div><span class="step">04</span><h2>Evidence-based findings</h2></div><button id="export" class="secondary">Export redacted bundle</button></div>
       <p id="summary"></p><div id="findings" class="findings"></div>
       <section id="session-section" class="hidden"><h3>Session context</h3><dl id="session" class="snapshot"></dl></section>
       <section id="timeline-section" class="hidden"><h3>Local session timeline</h3><ul id="session-timeline" class="selected"></ul></section>
@@ -33,6 +40,6 @@
     </section>
   </main>
   <footer>Citizen Health is an independent fan-made companion and is not affiliated with Cloud Imperium Games.</footer>
-  <script type="module" src="src/app.js?v=3"></script>
+  <script type="module" src="src/app.js?v=4"></script>
 </body>
 </html>

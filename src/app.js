@@ -7,6 +7,10 @@ const selectionStatus = document.querySelector("#selection-status");
 const liveFolderButton = document.querySelector("#choose-live-folder");
 const monitorButton = document.querySelector("#monitor-live-folder");
 const monitorStatus = document.querySelector("#monitor-status");
+const keepHistory = document.querySelector("#keep-history");
+const clearHistory = document.querySelector("#clear-history");
+const historyStatus = document.querySelector("#history-status");
+const historyList = document.querySelector("#history-list");
 const snapshot = document.querySelector("#snapshot");
 const session = document.querySelector("#session");
 const timeline = document.querySelector("#session-timeline");
@@ -16,6 +20,48 @@ let report;
 let liveDirectory;
 let monitorTimer;
 let lastObservedLog;
+const historyKey = "citizen-health.session-history.v1";
+const historyEnabledKey = "citizen-health.session-history-enabled.v1";
+
+function loadHistory() {
+  try { return JSON.parse(localStorage.getItem(historyKey) || "[]"); } catch { return []; }
+}
+
+function saveHistory(records) {
+  localStorage.setItem(historyKey, JSON.stringify(records.slice(0, 100)));
+}
+
+function renderHistory() {
+  const records = loadHistory();
+  historyList.replaceChildren(...records.map(record => {
+    const item = document.createElement("li");
+    item.textContent = `${record.startedAt} — ${record.outcome} (${record.findings.join(", ") || "no finding"})`;
+    return item;
+  }));
+  historyStatus.textContent = keepHistory.checked
+    ? `${records.length} local session record${records.length === 1 ? "" : "s"}. Raw logs are not retained.`
+    : "History is off. Existing local records remain until deleted.";
+}
+
+function recordLatestSession(nextReport) {
+  if (!keepHistory.checked) return;
+  const startIndex = nextReport.sessionEvents.map(event => event.type).lastIndexOf("entered-game");
+  if (startIndex < 0) return;
+  const events = nextReport.sessionEvents.slice(startIndex);
+  const startedAt = events[0].at;
+  const lastEvent = events.at(-1);
+  const record = {
+    id: startedAt,
+    startedAt,
+    outcome: lastEvent.label,
+    findings: nextReport.findings.map(finding => finding.title),
+    updatedAt: nextReport.createdAt
+  };
+  const records = loadHistory().filter(existing => existing.id !== record.id);
+  records.unshift(record);
+  saveHistory(records);
+  renderHistory();
+}
 
 function updateSelection() {
   const files = [...input.files];
@@ -36,6 +82,7 @@ function renderKeyValues(container, values, suffix = "") {
 
 function renderReport(nextReport, skipped = 0) {
   report = nextReport;
+  recordLatestSession(report);
   document.querySelector("#summary").textContent = `${report.findings.length} finding${report.findings.length === 1 ? "" : "s"} from ${report.fileNames.length} analyzed text file${report.fileNames.length === 1 ? "" : "s"}.${report.skippedFileNames.length ? ` ${report.skippedFileNames.length} older Game log backup${report.skippedFileNames.length === 1 ? " was" : "s were"} left out; only the newest was analyzed.` : ""}${skipped ? ` ${skipped} unsupported, binary, or over-25 MB file${skipped === 1 ? " was" : "s were"} intentionally excluded.` : ""} Confidence describes evidence strength, not severity.`;
   document.querySelector("#findings").replaceChildren(...report.findings.map(finding => {
     const card = document.createElement("article");
@@ -90,6 +137,19 @@ async function checkLiveFolder() {
 
 input.addEventListener("change", updateSelection);
 input.addEventListener("input", updateSelection);
+
+keepHistory.checked = localStorage.getItem(historyEnabledKey) === "true";
+renderHistory();
+keepHistory.addEventListener("change", () => {
+  localStorage.setItem(historyEnabledKey, String(keepHistory.checked));
+  if (keepHistory.checked && report) recordLatestSession(report);
+  renderHistory();
+});
+clearHistory.addEventListener("click", () => {
+  if (!window.confirm("Delete all Citizen Health session history stored in this browser? This cannot be undone.")) return;
+  localStorage.removeItem(historyKey);
+  renderHistory();
+});
 
 analyzeButton.addEventListener("click", async () => {
   const allowed = [...input.files].filter(file => supportedExtensions.test(file.name) && file.size <= maxTextFileSize);
