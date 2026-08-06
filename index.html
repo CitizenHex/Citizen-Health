@@ -12,13 +12,14 @@
     <section class="safety"><strong>Read-only by design</strong><span>No injection</span><span>No memory access</span><span>No automation</span><span>No uploads</span></section>
     <section class="panel">
       <div><span class="step">01</span><h2>Analyze latest crash</h2><p>Select the evidence you want analyzed. Files remain in this browser tab.</p></div>
-      <label class="picker"><input id="files" type="file" multiple accept=".log,.txt,.json,.xml,.dmp"><span>Choose logs and diagnostics</span><small>Game.log, launcher log, crash-handler files, optional DxDiag</small></label>
+      <label class="picker"><input id="files" type="file" multiple accept=".log,.txt,.json,.xml,.dmp,.mdmp"><span>Choose logs and diagnostics</span><small>Game.log, launcher log, crash-handler text, optional DxDiag. Binary dumps are not read or exported.</small></label>
       <ul id="selected" class="selected"></ul>
       <button id="analyze" disabled>Analyze selected files</button>
     </section>
     <section id="results" class="panel hidden" aria-live="polite">
       <div class="result-head"><div><span class="step">02</span><h2>Evidence-based findings</h2></div><button id="export" class="secondary">Export redacted bundle</button></div>
       <p id="summary"></p><div id="findings" class="findings"></div>
+      <section id="snapshot-section" class="hidden"><h3>DxDiag snapshot</h3><dl id="snapshot" class="snapshot"></dl></section>
       <details><summary>Redaction preview</summary><pre id="redaction"></pre></details>
     </section>
   </main>

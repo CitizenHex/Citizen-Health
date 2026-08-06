@@ -14,9 +14,28 @@ export function redact(text) {
     .replace(/\b(?:token|password|auth(?:orization)?)[=: ]+[^\s,;]+/gi, "$1=[REDACTED]");
 }
 
+function valueAfter(text, label) {
+  return text.match(new RegExp(`^\\s*${label}\\s*:\\s*(.+)$`, "im"))?.[1]?.trim();
+}
+
+export function parseDxDiag(text) {
+  const displayBlocks = text.split(/^-{5,}$/m).filter(block => /Card name:|Driver Version:/i.test(block));
+  const card = displayBlocks.map(block => ({
+    name: valueAfter(block, "Card name") || valueAfter(block, "Name"),
+    memory: valueAfter(block, "Display Memory"),
+    driver: valueAfter(block, "Driver Version")
+  })).find(item => item.name);
+  const snapshot = {
+    windows: valueAfter(text, "Operating System"), systemMemory: valueAfter(text, "Memory"),
+    cpu: valueAfter(text, "Processor"), gpu: card?.name, vram: card?.memory, driver: card?.driver
+  };
+  return Object.fromEntries(Object.entries(snapshot).filter(([, value]) => value));
+}
+
 export function analyze(files) {
   const joined = files.map(file => `--- ${file.name} ---\n${file.text}`).join("\n");
   const findings = rules.filter(rule => rule.pattern.test(joined)).map(({ pattern, ...finding }) => finding);
   if (!findings.length) findings.push({ id: "unknown", confidence: "low", title: "No recognized cause", evidence: "The selected files do not contain a supported diagnostic signature.", action: "Add Game.log, launcher log, crash-handler text, and DxDiag if available. Do not assume the PC is at fault.", link: "https://support.robertsspaceindustries.com/hc/en-us/articles/360000065688-Send-In-Game-Files-for-RSI-Support" });
-  return { createdAt: new Date().toISOString(), fileNames: files.map(file => file.name), findings, redactedEvidence: redact(joined) };
+  const dxDiag = files.find(file => /dxdiag/i.test(file.name));
+  return { createdAt: new Date().toISOString(), fileNames: files.map(file => file.name), findings, hardwareSnapshot: dxDiag ? parseDxDiag(dxDiag.text) : {}, redactedEvidence: redact(joined) };
 }
