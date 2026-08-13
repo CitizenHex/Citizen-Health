@@ -76,6 +76,7 @@ test("export contains only the minimal redacted report, never full raw log conte
   assert.equal(exported.includes(secret), false);
   assert.equal(exported.includes("redactedEvidence"), false);
   assert.equal(exported.includes("EXCEPTION_ACCESS_VIOLATION"), true);
+  assert.equal(createExportBundle(report).appVersion, "0.1.0");
 });
 
 test("support summary is readable and never includes unrecognized raw log content", () => {
@@ -83,6 +84,7 @@ test("support summary is readable and never includes unrecognized raw log conten
   const report = analyze([{ name: "Game.log", text: `${secret}\nEXCEPTION_ACCESS_VIOLATION` }]);
   const summary = createSupportSummary(report);
   assert.match(summary, /redacted support summary/);
+  assert.match(summary, /Citizen Health 0\.1\.0/);
   assert.match(summary, /Access violation detected/);
   assert.equal(summary.includes(secret), false);
   assert.equal(summary.includes("Game.log"), false);

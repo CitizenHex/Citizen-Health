@@ -1,3 +1,5 @@
+import { appVersion } from "./version.js";
+
 const rules = [
   { id: "controlled-exit", confidence: "high", title: "Controlled client shutdown — not a crash", pattern: /(systemquit.*exitcode=0|cause=30016.*player requested disconnect)/i, evidence: "The game log records a normal exit code or a player-requested disconnect followed by shutdown.", action: "No crash remediation is indicated from this session. If the exit was unexpected, collect the matching launcher log and any crash-handler text from the same time window.", link: "https://support.robertsspaceindustries.com/hc/en-us/articles/360000065688-Send-In-Game-Files-for-RSI-Support" },
   { id: "cryengine-watchdog", confidence: "high", title: "CryEngine watchdog crash", pattern: /(status_cryengine_watch_dog|0x2badff60|732823392)/i, evidence: "The log contains Star Citizen's specific CryEngine watchdog crash status.", action: "This identifies an engine-level crash, not a single confirmed local cause. Record the exact build and check current patch issues before changing hardware settings.", link: "https://support.robertsspaceindustries.com/hc/en-us/articles/360000161747-Troubleshoot-the-RSI-Launcher" },
@@ -101,6 +103,7 @@ export function createExportBundle(report) {
   return {
     format: "citizen-health.redacted-report",
     version: 1,
+    appVersion,
     createdAt: report.createdAt,
     analyzedFiles: report.fileNames,
     skippedOlderGameLogs: report.skippedFileNames,
@@ -114,7 +117,7 @@ export function createExportBundle(report) {
 
 export function createSupportSummary(report) {
   const lines = [
-    "Citizen Health — redacted support summary",
+    `Citizen Health ${appVersion} — redacted support summary`,
     `Generated: ${report.createdAt}`,
     "",
     "Assessment"

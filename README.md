@@ -49,6 +49,10 @@ Open `http://127.0.0.1:4173`. The server binds only to the local machine and the
 npm test
 ```
 
+## Releases
+
+The MVP version appears in the footer and every redacted export/support summary. Before publishing, follow [RELEASE-CHECKLIST.md](RELEASE-CHECKLIST.md) to check the local-only safety boundary, redaction behavior, and dependency-free runtime.
+
 ## Status
 
 Early scaffold—not yet a diagnostic authority. Rules and remediation links require versioned review as Star Citizen changes.

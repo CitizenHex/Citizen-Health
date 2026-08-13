@@ -1,4 +1,5 @@
 import { analyze, createExportBundle, createSupportSummary } from "./analysis.js";
+import { appVersion } from "./version.js";
 
 const input = document.querySelector("#files");
 const analyzeButton = document.querySelector("#analyze");
@@ -20,6 +21,7 @@ const session = document.querySelector("#session");
 const timeline = document.querySelector("#session-timeline");
 const supportSummary = document.querySelector("#support-summary");
 const copySupportSummaryButton = document.querySelector("#copy-support-summary");
+const appVersionLabel = document.querySelector("#app-version");
 const supportedExtensions = /\.(log|txt|json|xml)$/i;
 const maxTextFileSize = 25 * 1024 * 1024;
 let report;
@@ -233,6 +235,7 @@ input.addEventListener("change", updateSelection);
 input.addEventListener("input", updateSelection);
 
 keepHistory.checked = localStorage.getItem(historyEnabledKey) === "true";
+appVersionLabel.textContent = `Citizen Health ${appVersion}`;
 renderHistory();
 renderPrivacyStatus();
 keepHistory.addEventListener("change", () => {
