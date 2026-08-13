@@ -4,4 +4,5 @@ src-tauri/
 pnpm-lock.yaml
 coverage/
 *.log
+!tests/fixtures/*.log
 !.gitkeep
