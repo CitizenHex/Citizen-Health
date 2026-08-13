@@ -19,6 +19,7 @@ const privacyStatus = document.querySelector("#privacy-status");
 const snapshot = document.querySelector("#snapshot");
 const session = document.querySelector("#session");
 const timeline = document.querySelector("#session-timeline");
+const combatEvents = document.querySelector("#combat-events");
 const supportSummary = document.querySelector("#support-summary");
 const copySupportSummaryButton = document.querySelector("#copy-support-summary");
 const inputCoverage = document.querySelector("#input-coverage");
@@ -150,6 +151,13 @@ function renderReport(nextReport, skipped = 0, automated = false) {
     return item;
   }));
   document.querySelector("#timeline-section").classList.toggle("hidden", !timeline.children.length);
+  combatEvents.replaceChildren(...report.combatEvents.map(event => {
+    const item = document.createElement("li");
+    const details = [event.weapon && `weapon: ${event.weapon}`, event.damageType && `damage: ${event.damageType}`].filter(Boolean).join(" · ");
+    item.textContent = `${event.at} — ${event.label}${details ? ` (${details})` : ""}`;
+    return item;
+  }));
+  document.querySelector("#combat-section").classList.toggle("hidden", !combatEvents.children.length);
   renderKeyValues(snapshot, report.hardwareSnapshot);
   document.querySelector("#snapshot-section").classList.toggle("hidden", !snapshot.children.length);
   document.querySelector("#redaction").textContent = report.redactedEvidence.slice(0, 5000);

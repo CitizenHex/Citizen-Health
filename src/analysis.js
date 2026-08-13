@@ -60,6 +60,39 @@ export function parseSessionEvents(text) {
   }).slice(-30);
 }
 
+function playerHandle(text) {
+  return text.match(/nickname="([^"]+)"/i)?.[1]
+    || text.match(/User Login Success - Handle\[([^\]]+)\]/i)?.[1]
+    || text.match(/Character:.*?\bname ([^-\n]+?) - state STATE_CURRENT/i)?.[1]?.trim();
+}
+
+function itemLabel(value) {
+  return value?.replace(/_\d{6,}$/, "").replaceAll("_", " ");
+}
+
+export function parseCombatEvents(text) {
+  const handle = playerHandle(text);
+  if (!handle) return [];
+  const events = [];
+  for (const line of text.split(/\r?\n/)) {
+    if (!/<Actor Death>/i.test(line)) continue;
+    const match = line.match(/<(\d{4}-\d{2}-\d{2}T[^>]+)>.*?CActor::Kill:\s*'([^']+)'\s*\[\d+\].*?killed by\s*'([^']+)'\s*\[\d+\](?:\s*using\s*'([^']+)')?.*?damage type\s*'([^']+)'/i);
+    if (!match) continue;
+    const [, at, victim, killer, weapon, damageType] = match;
+    if (victim !== handle && killer !== handle) continue;
+    const wasKilled = victim === handle;
+    events.push({
+      at,
+      type: wasKilled ? "player-death" : "player-kill",
+      label: wasKilled ? `You were killed by ${killer}` : `You killed ${victim}`,
+      otherParty: wasKilled ? killer : victim,
+      weapon: itemLabel(weapon),
+      damageType
+    });
+  }
+  return events.slice(-100);
+}
+
 function evidenceLines(text, pattern) {
   return text.split(/\r?\n/).filter(line => pattern.test(line)).slice(0, 3).map(redact);
 }
@@ -112,7 +145,7 @@ export function analyze(files) {
   }
   const dxDiag = selection.files.find(file => /dxdiag/i.test(file.name));
   const gameLog = selection.files.find(file => /game/i.test(file.name));
-  return { createdAt: new Date().toISOString(), fileNames: selection.files.map(file => file.name), skippedFileNames: selection.skippedFileNames, inputCoverage, findings, session: parseSession(gameLog), sessionEvents: gameLog ? parseSessionEvents(gameLog.text) : [], hardwareSnapshot: dxDiag ? parseDxDiag(dxDiag.text) : {}, redactedEvidence: redact(joined) };
+  return { createdAt: new Date().toISOString(), fileNames: selection.files.map(file => file.name), skippedFileNames: selection.skippedFileNames, inputCoverage, findings, session: parseSession(gameLog), sessionEvents: gameLog ? parseSessionEvents(gameLog.text) : [], combatEvents: gameLog ? parseCombatEvents(gameLog.text) : [], hardwareSnapshot: dxDiag ? parseDxDiag(dxDiag.text) : {}, redactedEvidence: redact(joined) };
 }
 
 export function createExportBundle(report) {

@@ -1,0 +1,2 @@
+<2026-08-13T19:00:00.000Z> <Expect Incoming Connection> nickname="PilotOne"
+<2026-08-13T19:10:00.000Z> [Notice] <Actor Death> CActor::Kill: 'PilotOne' [100] in zone 'Test' killed by 'PirateTwo' [200] using 'behr_laser_repeater_123456789' [Class test] with damage type 'Bullet'
