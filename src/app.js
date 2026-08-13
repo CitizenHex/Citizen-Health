@@ -157,7 +157,31 @@ function renderReport(nextReport, skipped = 0, automated = false) {
 }
 
 async function fileForAnalysis(file) {
-  return { name: file.name, text: await file.text(), lastModified: file.lastModified };
+  const text = await file.text();
+  if (text.includes("\0")) throw new Error("Selected file is not plain text");
+  return { name: file.name, text, lastModified: file.lastModified };
+}
+
+async function readFilesSafely(files) {
+  const results = await Promise.allSettled(files.map(fileForAnalysis));
+  return {
+    files: results.filter(result => result.status === "fulfilled").map(result => result.value),
+    unreadable: results.filter(result => result.status === "rejected").length
+  };
+}
+
+function stopMonitoring(message, forgetFolders = false) {
+  if (monitorTimer) clearInterval(monitorTimer);
+  monitorTimer = undefined;
+  monitorButton.textContent = "Enable local monitoring";
+  if (forgetFolders) {
+    liveDirectory = undefined;
+    launcherDirectory = undefined;
+    lastObservedFingerprint = undefined;
+    monitorButton.disabled = true;
+  }
+  monitorStatus.textContent = message;
+  renderPrivacyStatus();
 }
 
 async function latestGameLogFrom(directory) {
@@ -181,16 +205,28 @@ async function launcherLogFrom(directory) {
 
 async function checkLiveFolder() {
   if (!liveDirectory) return;
-  const gameLog = await latestGameLogFrom(liveDirectory);
-  if (!gameLog) { monitorStatus.textContent = "No Game.log or Game backup found in the selected LIVE folder."; return; }
-  if (gameLog.size > maxTextFileSize) { monitorStatus.textContent = "The newest Game log is over 25 MB and was not read."; return; }
-  const launcherLog = launcherDirectory ? await launcherLogFrom(launcherDirectory) : undefined;
-  const readableLauncher = launcherLog && launcherLog.size <= maxTextFileSize ? launcherLog : undefined;
-  const fingerprint = [gameLog, readableLauncher].filter(Boolean).map(file => `${file.name}:${file.size}:${file.lastModified}`).join("|");
-  if (fingerprint === lastObservedFingerprint) return;
-  lastObservedFingerprint = fingerprint;
-  renderReport(analyze(await Promise.all([gameLog, readableLauncher].filter(Boolean).map(fileForAnalysis))), 0, true);
-  monitorStatus.textContent = `Monitoring Game.log${readableLauncher ? " and launcher log.log" : ""} while Citizen Health stays open. Last analyzed: ${gameLog.name}.`;
+  try {
+    const gameLog = await latestGameLogFrom(liveDirectory);
+    if (!gameLog) { monitorStatus.textContent = "No Game.log or Game backup found in the selected LIVE folder."; return; }
+    if (gameLog.size > maxTextFileSize) { monitorStatus.textContent = "The newest Game log is over 25 MB and was not read."; return; }
+    const launcherLog = launcherDirectory ? await launcherLogFrom(launcherDirectory) : undefined;
+    const readableLauncher = launcherLog && launcherLog.size <= maxTextFileSize ? launcherLog : undefined;
+    const fingerprint = [gameLog, readableLauncher].filter(Boolean).map(file => `${file.name}:${file.size}:${file.lastModified}`).join("|");
+    if (fingerprint === lastObservedFingerprint) return;
+    const read = await readFilesSafely([gameLog, readableLauncher].filter(Boolean));
+    if (read.unreadable) {
+      stopMonitoring("Monitoring stopped because the newest log could not be read as plain text. No file was changed.");
+      return;
+    }
+    lastObservedFingerprint = fingerprint;
+    renderReport(analyze(read.files), 0, true);
+    monitorStatus.textContent = `Monitoring Game.log${readableLauncher ? " and launcher log.log" : ""} while Citizen Health stays open. Last analyzed: ${gameLog.name}.`;
+  } catch (error) {
+    const accessLost = ["NotAllowedError", "NotFoundError", "SecurityError"].includes(error?.name);
+    stopMonitoring(accessLost
+      ? "Monitoring stopped because this browser can no longer access the selected folder. Select it again to resume."
+      : "Monitoring stopped because the selected folder could not be read. No file was changed.", accessLost);
+  }
 }
 
 input.addEventListener("change", updateSelection);
@@ -215,7 +251,10 @@ clearHistory.addEventListener("click", () => {
 analyzeButton.addEventListener("click", async () => {
   const allowed = [...input.files].filter(file => supportedExtensions.test(file.name) && file.size <= maxTextFileSize);
   if (!allowed.length) { selectionStatus.textContent = "No supported text files were selected."; return; }
-  renderReport(analyze(await Promise.all(allowed.map(fileForAnalysis))), input.files.length - allowed.length);
+  const read = await readFilesSafely(allowed);
+  if (!read.files.length) { selectionStatus.textContent = "The selected files could not be read as plain text. No file was changed."; return; }
+  renderReport(analyze(read.files), input.files.length - allowed.length + read.unreadable);
+  if (read.unreadable) selectionStatus.textContent = `${read.unreadable} selected file${read.unreadable === 1 ? " was" : "s were"} excluded because it could not be read as plain text.`;
 });
 
 liveFolderButton.addEventListener("click", async () => {
@@ -244,7 +283,7 @@ launcherFolderButton.addEventListener("click", async () => {
 });
 
 monitorButton.addEventListener("click", async () => {
-  if (monitorTimer) { clearInterval(monitorTimer); monitorTimer = undefined; monitorButton.textContent = "Enable local monitoring"; monitorStatus.textContent = "Monitoring stopped. Folder access ends when the page closes."; renderPrivacyStatus(); return; }
+  if (monitorTimer) { stopMonitoring("Monitoring stopped. Folder access ends when the page closes."); return; }
   await checkLiveFolder();
   monitorTimer = setInterval(checkLiveFolder, 15000);
   monitorButton.textContent = "Stop local monitoring";
