@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { analyze, createExportBundle, createSupportSummary, describeInputs, parseCombatEvents, parseDxDiag, parseSessionEvents, redact, selectLatestGameLog } from "../src/analysis.js";
+import { analyze, createExportBundle, createSupportSummary, describeInputs, parseCombatEvents, parseDxDiag, parseSessionEvents, redact, selectLatestGameLog, summarizeCombatHistory } from "../src/analysis.js";
 
 function fixture(name) {
   return readFileSync(new URL(`./fixtures/${name}`, import.meta.url), "utf8");
@@ -131,4 +131,17 @@ test("shows combat events only when Actor Death directly matches the logged-in h
   const events = parseCombatEvents(`<2026-08-13T19:00:00.000Z> <Expect Incoming Connection> nickname="PilotOne"\n<2026-08-13T19:10:00.000Z> [Notice] <Actor Death> CActor::Kill: 'PilotOne' [100] in zone 'Test' killed by 'PirateTwo' [200] using 'behr laser repeater 123456789' [Class test] with damage type 'Bullet'\n<2026-08-13T19:11:00.000Z> [Notice] <Actor Death> CActor::Kill: 'NPC_Unit' [300] in zone 'Test' killed by 'PilotOne' [100] using 'test weapon 123456789' [Class test] with damage type 'Bullet'\n<2026-08-13T19:12:00.000Z> [Notice] <Actor Death> CActor::Kill: 'OtherNPC' [400] in zone 'Test' killed by 'OtherPlayer' [500] using 'test' [Class test] with damage type 'Bullet'`);
   assert.deepEqual(events.map(event => event.label), ["You were killed by PirateTwo", "You killed NPC_Unit"]);
   assert.equal(events[0].damageType, "Bullet");
+});
+
+test("summarizes saved combat history without source logs", () => {
+  const records = [{ combatEvents: [
+    { at: "2026-08-13T19:10:00.000Z", type: "player-death", label: "You were killed by PirateTwo", otherParty: "PirateTwo", weapon: "weapon", damageType: "Bullet" },
+    { at: "2026-08-13T19:11:00.000Z", type: "player-kill", label: "You killed NPC", otherParty: "NPC" },
+    { at: "2026-08-14T19:12:00.000Z", type: "player-death", label: "You were killed by PirateTwo", otherParty: "PirateTwo" }
+  ] }];
+  const summary = summarizeCombatHistory(records);
+  assert.equal(summary.totalDeaths, 2);
+  assert.equal(summary.totalKills, 1);
+  assert.deepEqual(summary.recentAttackers, [["PirateTwo", 2]]);
+  assert.equal(summarizeCombatHistory(records, "player-death").events.length, 2);
 });

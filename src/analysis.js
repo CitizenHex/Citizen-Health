@@ -93,6 +93,26 @@ export function parseCombatEvents(text) {
   return events.slice(-100);
 }
 
+export function summarizeCombatHistory(records, filter = "all") {
+  const events = records
+    .flatMap(record => record.combatEvents || [])
+    .filter(event => filter === "all" || event.type === filter)
+    .toSorted((left, right) => right.at.localeCompare(left.at));
+  const deaths = events.filter(event => event.type === "player-death");
+  const attackers = [...new Map(deaths.map(event => [event.otherParty || event.label.replace("You were killed by ", ""), 0])).entries()];
+  for (const event of deaths) {
+    const name = event.otherParty || event.label.replace("You were killed by ", "");
+    const entry = attackers.find(([attacker]) => attacker === name);
+    entry[1] += 1;
+  }
+  return {
+    events,
+    totalDeaths: records.flatMap(record => record.combatEvents || []).filter(event => event.type === "player-death").length,
+    totalKills: records.flatMap(record => record.combatEvents || []).filter(event => event.type === "player-kill").length,
+    recentAttackers: attackers.filter(([, count]) => count > 0).toSorted((left, right) => right[1] - left[1] || left[0].localeCompare(right[0])).slice(0, 5)
+  };
+}
+
 function evidenceLines(text, pattern) {
   return text.split(/\r?\n/).filter(line => pattern.test(line)).slice(0, 3).map(redact);
 }

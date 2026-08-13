@@ -1,4 +1,4 @@
-import { analyze, createExportBundle, createSupportSummary } from "./analysis.js";
+import { analyze, createExportBundle, createSupportSummary, summarizeCombatHistory } from "./analysis.js";
 import { appVersion } from "./version.js";
 
 const input = document.querySelector("#files");
@@ -15,6 +15,10 @@ const keepHistory = document.querySelector("#keep-history");
 const clearHistory = document.querySelector("#clear-history");
 const historyStatus = document.querySelector("#history-status");
 const historyList = document.querySelector("#history-list");
+const combatHistoryList = document.querySelector("#combat-history-list");
+const combatHistorySummary = document.querySelector("#combat-history-summary");
+const recentAttackers = document.querySelector("#recent-attackers");
+const recentAttackersList = document.querySelector("#recent-attackers-list");
 const privacyStatus = document.querySelector("#privacy-status");
 const snapshot = document.querySelector("#snapshot");
 const session = document.querySelector("#session");
@@ -32,6 +36,7 @@ let launcherDirectory;
 let monitorTimer;
 let lastObservedFingerprint;
 let lastActivityKey;
+let combatHistoryFilter = "all";
 const historyKey = "citizen-health.session-history.v1";
 const historyEnabledKey = "citizen-health.session-history-enabled.v1";
 
@@ -67,6 +72,25 @@ function renderHistory() {
   historyStatus.textContent = keepHistory.checked
     ? `${records.length} local session record${records.length === 1 ? "" : "s"}. Direct combat names may be retained; raw logs are not.`
     : "History is off. Existing local records remain until deleted.";
+  renderCombatHistory(records);
+}
+
+function renderCombatHistory(records = loadHistory()) {
+  const summary = summarizeCombatHistory(records, combatHistoryFilter);
+  combatHistorySummary.textContent = records.length
+    ? `${summary.totalDeaths} recorded death${summary.totalDeaths === 1 ? "" : "s"} · ${summary.totalKills} recorded kill${summary.totalKills === 1 ? "" : "s"}. Names are local-only and come directly from saved combat events.`
+    : "No saved combat history yet. Turn on local history before analyzing or monitoring a session.";
+  combatHistoryList.replaceChildren(...summary.events.map(event => {
+    const item = document.createElement("li");
+    const details = [event.weapon && `weapon: ${event.weapon}`, event.damageType && `damage: ${event.damageType}`].filter(Boolean).join(" · ");
+    item.textContent = `${event.at} — ${event.label}${details ? ` (${details})` : ""}`;
+    return item;
+  }));
+  recentAttackersList.replaceChildren(...summary.recentAttackers.map(([name, count]) => {
+    const item = document.createElement("li"); item.textContent = `${name} — ${count} recorded death${count === 1 ? "" : "s"}`; return item;
+  }));
+  recentAttackers.classList.toggle("hidden", !summary.recentAttackers.length);
+  document.querySelectorAll("[data-combat-filter]").forEach(button => button.classList.toggle("active-filter", button.dataset.combatFilter === combatHistoryFilter));
 }
 
 function renderPrivacyStatus() {
@@ -93,7 +117,7 @@ function recordLatestSession(nextReport) {
     startedAt,
     outcome: lastEvent.label,
     findings: nextReport.findings.map(finding => finding.title),
-    combatEvents: nextReport.combatEvents.filter(event => event.at >= startedAt).slice(-25).map(({ at, type, label, weapon, damageType }) => ({ at, type, label, weapon, damageType })),
+    combatEvents: nextReport.combatEvents.filter(event => event.at >= startedAt).slice(-25).map(({ at, type, label, otherParty, weapon, damageType }) => ({ at, type, label, otherParty, weapon, damageType })),
     updatedAt: nextReport.createdAt
   };
   const records = loadHistory().filter(existing => existing.id !== record.id);
@@ -275,6 +299,11 @@ clearHistory.addEventListener("click", () => {
   renderHistory();
   renderPrivacyStatus();
 });
+
+document.querySelectorAll("[data-combat-filter]").forEach(button => button.addEventListener("click", () => {
+  combatHistoryFilter = button.dataset.combatFilter;
+  renderCombatHistory();
+}));
 
 analyzeButton.addEventListener("click", async () => {
   const allowed = [...input.files].filter(file => supportedExtensions.test(file.name) && file.size <= maxTextFileSize);

@@ -27,19 +27,26 @@
       <ul id="history-list" class="selected"></ul>
     </section>
     <section class="panel">
-      <div><span class="step">03</span><h2>Local privacy status</h2><p>A plain-language view of what Citizen Health can access during this browser session.</p></div>
+      <div><span class="step">03</span><h2>Local combat history</h2><p>Review only direct kill/death events saved through the optional local-history setting.</p></div>
+      <div class="filter-row" role="group" aria-label="Combat history filter"><button type="button" class="secondary active-filter" data-combat-filter="all">All</button><button type="button" class="secondary" data-combat-filter="player-death">Deaths</button><button type="button" class="secondary" data-combat-filter="player-kill">Kills</button></div>
+      <p id="combat-history-summary" class="selection-status">No saved combat history yet.</p>
+      <div id="recent-attackers" class="hidden"><h3>Recent attackers</h3><ul id="recent-attackers-list" class="selected"></ul></div>
+      <ul id="combat-history-list" class="selected"></ul>
+    </section>
+    <section class="panel">
+      <div><span class="step">04</span><h2>Local privacy status</h2><p>A plain-language view of what Citizen Health can access during this browser session.</p></div>
       <dl id="privacy-status" class="snapshot"></dl>
       <small>Folder selections and analyzed reports stay in page memory. Closing this tab clears them. Local history, including direct combat names when opted in, is the only optional browser storage.</small>
     </section>
     <section class="panel">
-      <div><span class="step">04</span><h2>Analyze selected files</h2><p>Use this for a one-off report or to add a launcher log and DxDiag.</p></div>
+      <div><span class="step">05</span><h2>Analyze selected files</h2><p>Use this for a one-off report or to add a launcher log and DxDiag.</p></div>
       <div class="picker"><input id="files" type="file" multiple accept=".log,.txt,.json,.xml,.dmp,.mdmp" style="position:static; opacity:1;"><span>Choose logs and diagnostics</span><small>Game.log, launcher log, crash-handler text, optional DxDiag. Binary dumps are not read or exported.</small></div>
       <ul id="selected" class="selected"></ul>
       <p id="selection-status" class="selection-status">No files selected yet.</p>
       <button id="analyze" disabled>Analyze selected files</button>
     </section>
     <section id="results" class="panel hidden" aria-live="polite">
-      <div class="result-head"><div><span class="step">05</span><h2>Evidence-based findings</h2></div><button id="export" class="secondary">Export redacted bundle</button></div>
+      <div class="result-head"><div><span class="step">06</span><h2>Evidence-based findings</h2></div><button id="export" class="secondary">Export redacted bundle</button></div>
       <p id="summary"></p><div id="findings" class="findings"></div>
       <section id="input-coverage-section" class="input-coverage"><h3>Analysis coverage</h3><p id="input-coverage"></p></section>
       <section id="support-summary-section"><div class="result-head"><h3>Redacted support summary</h3><button id="copy-support-summary" class="secondary" type="button">Copy summary</button></div><p class="muted">A concise, readable summary for a support request. Review it before sharing.</p><pre id="support-summary" class="support-summary"></pre></section>
@@ -51,6 +58,6 @@
     </section>
   </main>
   <footer><span id="app-version">Citizen Health</span> · Independent fan-made companion; not affiliated with Cloud Imperium Games.</footer>
-  <script type="module" src="src/app.js?v=12"></script>
+  <script type="module" src="src/app.js?v=13"></script>
 </body>
 </html>
