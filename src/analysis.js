@@ -111,3 +111,28 @@ export function createExportBundle(report) {
     privacy: "This export intentionally excludes complete source logs, binary dumps, and unrecognized raw data."
   };
 }
+
+export function createSupportSummary(report) {
+  const lines = [
+    "Citizen Health — redacted support summary",
+    `Generated: ${report.createdAt}`,
+    "",
+    "Assessment"
+  ];
+  for (const finding of report.findings) {
+    lines.push(`- [${finding.confidence.toUpperCase()}] ${finding.title}`);
+    lines.push(`  Evidence: ${finding.evidence}`);
+    for (const evidenceLine of finding.evidenceLines) lines.push(`  Log line: ${evidenceLine}`);
+    lines.push(`  Suggested next step: ${finding.action}`);
+  }
+  if (Object.keys(report.session).length) {
+    lines.push("", "Session context");
+    for (const [label, value] of Object.entries(report.session)) lines.push(`- ${label}: ${value}`);
+  }
+  if (Object.keys(report.hardwareSnapshot).length) {
+    lines.push("", "DxDiag snapshot (context only, not a diagnosis)");
+    for (const [label, value] of Object.entries(report.hardwareSnapshot)) lines.push(`- ${label}: ${value}`);
+  }
+  lines.push("", "Privacy", "This summary intentionally excludes complete source logs, binary dumps, file paths, and unrecognized raw data.");
+  return lines.join("\n");
+}

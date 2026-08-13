@@ -1,6 +1,24 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { analyze, createExportBundle, parseDxDiag, parseSessionEvents, redact, selectLatestGameLog } from "../src/analysis.js";
+import { readFileSync } from "node:fs";
+import { analyze, createExportBundle, createSupportSummary, parseDxDiag, parseSessionEvents, redact, selectLatestGameLog } from "../src/analysis.js";
+
+function fixture(name) {
+  return readFileSync(new URL(`./fixtures/${name}`, import.meta.url), "utf8");
+}
+
+test("anonymized fixtures classify supported evidence", () => {
+  const cases = [
+    ["cryengine-watchdog.log", "cryengine-watchdog"],
+    ["memory-exhaustion.log", "oom"],
+    ["access-violation.log", "access"],
+    ["controlled-exit.log", "controlled-exit"]
+  ];
+  for (const [name, expectedId] of cases) {
+    const report = analyze([{ name: "Game.log", text: fixture(name) }]);
+    assert.equal(report.findings[0].id, expectedId, name);
+  }
+});
 
 test("classifies explicit memory failures with high confidence", () => {
   const report = analyze([{ name: "Game.log", text: "Fatal: Out of memory; failed to allocate 8192 bytes" }]);
@@ -58,6 +76,16 @@ test("export contains only the minimal redacted report, never full raw log conte
   assert.equal(exported.includes(secret), false);
   assert.equal(exported.includes("redactedEvidence"), false);
   assert.equal(exported.includes("EXCEPTION_ACCESS_VIOLATION"), true);
+});
+
+test("support summary is readable and never includes unrecognized raw log content", () => {
+  const secret = "private-unrecognized-raw-log-content";
+  const report = analyze([{ name: "Game.log", text: `${secret}\nEXCEPTION_ACCESS_VIOLATION` }]);
+  const summary = createSupportSummary(report);
+  assert.match(summary, /redacted support summary/);
+  assert.match(summary, /Access violation detected/);
+  assert.equal(summary.includes(secret), false);
+  assert.equal(summary.includes("Game.log"), false);
 });
 
 test("redacts common personal data", () => {

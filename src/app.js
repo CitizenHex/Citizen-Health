@@ -1,4 +1,4 @@
-import { analyze, createExportBundle } from "./analysis.js";
+import { analyze, createExportBundle, createSupportSummary } from "./analysis.js";
 
 const input = document.querySelector("#files");
 const analyzeButton = document.querySelector("#analyze");
@@ -18,6 +18,8 @@ const privacyStatus = document.querySelector("#privacy-status");
 const snapshot = document.querySelector("#snapshot");
 const session = document.querySelector("#session");
 const timeline = document.querySelector("#session-timeline");
+const supportSummary = document.querySelector("#support-summary");
+const copySupportSummaryButton = document.querySelector("#copy-support-summary");
 const supportedExtensions = /\.(log|txt|json|xml)$/i;
 const maxTextFileSize = 25 * 1024 * 1024;
 let report;
@@ -148,6 +150,8 @@ function renderReport(nextReport, skipped = 0, automated = false) {
   renderKeyValues(snapshot, report.hardwareSnapshot);
   document.querySelector("#snapshot-section").classList.toggle("hidden", !snapshot.children.length);
   document.querySelector("#redaction").textContent = report.redactedEvidence.slice(0, 5000);
+  supportSummary.textContent = createSupportSummary(report);
+  copySupportSummaryButton.textContent = "Copy summary";
   document.querySelector("#results").classList.remove("hidden");
   renderPrivacyStatus();
 }
@@ -267,6 +271,19 @@ document.querySelector("#export").addEventListener("click", () => {
   const blob = new Blob([JSON.stringify(createExportBundle(report), null, 2)], { type: "application/json" });
   const link = Object.assign(document.createElement("a"), { href: URL.createObjectURL(blob), download: `citizen-health-${Date.now()}.redacted.json` });
   link.click(); URL.revokeObjectURL(link.href);
+});
+
+copySupportSummaryButton.addEventListener("click", async () => {
+  if (!report || !navigator.clipboard?.writeText) {
+    copySupportSummaryButton.textContent = "Select the text to copy";
+    return;
+  }
+  try {
+    await navigator.clipboard.writeText(createSupportSummary(report));
+    copySupportSummaryButton.textContent = "Copied";
+  } catch {
+    copySupportSummaryButton.textContent = "Select the text to copy";
+  }
 });
 
 window.addEventListener("beforeunload", () => clearInterval(monitorTimer));
