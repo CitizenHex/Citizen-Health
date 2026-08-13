@@ -93,6 +93,24 @@ export function parseCombatEvents(text) {
   return events.slice(-100);
 }
 
+export function parseShopPurchases(text) {
+  const lines = text.split(/\r?\n/);
+  const purchases = [];
+  for (let index = 0; index < lines.length; index += 1) {
+    const line = lines[index];
+    const match = line.match(/<(\d{4}-\d{2}-\d{2}T[^>]+)>.*?SendStandardItemBuyRequest> Sending SShopBuyRequest - .*?shopName\[([^\]]+)\].*?client_price\[([\d.]+)\].*?itemName\[([^\]]+)\]\s+quantity\[(\d+)\]\s+currencyType\[([^\]]+)\]/i);
+    if (!match) continue;
+    const [, at, shop, price, item, quantity, currency] = match;
+    const requestTime = Date.parse(at);
+    const confirmed = lines.slice(index + 1, index + 20).some(candidate => {
+      const timestamp = candidate.match(/<(\d{4}-\d{2}-\d{2}T[^>]+)>/)?.[1];
+      return timestamp && Date.parse(timestamp) - requestTime <= 10000 && /Transaction Complete:/i.test(candidate);
+    });
+    if (confirmed) purchases.push({ at, shop, item: itemLabel(item), quantity: Number(quantity), unitPrice: Number(price), currency });
+  }
+  return purchases.slice(-100);
+}
+
 export function summarizeCombatHistory(records, filter = "all") {
   const events = records
     .flatMap(record => record.combatEvents || [])
@@ -165,7 +183,7 @@ export function analyze(files) {
   }
   const dxDiag = selection.files.find(file => /dxdiag/i.test(file.name));
   const gameLog = selection.files.find(file => /game/i.test(file.name));
-  return { createdAt: new Date().toISOString(), fileNames: selection.files.map(file => file.name), skippedFileNames: selection.skippedFileNames, inputCoverage, findings, session: parseSession(gameLog), sessionEvents: gameLog ? parseSessionEvents(gameLog.text) : [], combatEvents: gameLog ? parseCombatEvents(gameLog.text) : [], hardwareSnapshot: dxDiag ? parseDxDiag(dxDiag.text) : {}, redactedEvidence: redact(joined) };
+  return { createdAt: new Date().toISOString(), fileNames: selection.files.map(file => file.name), skippedFileNames: selection.skippedFileNames, inputCoverage, findings, session: parseSession(gameLog), sessionEvents: gameLog ? parseSessionEvents(gameLog.text) : [], combatEvents: gameLog ? parseCombatEvents(gameLog.text) : [], shopPurchases: gameLog ? parseShopPurchases(gameLog.text) : [], hardwareSnapshot: dxDiag ? parseDxDiag(dxDiag.text) : {}, redactedEvidence: redact(joined) };
 }
 
 export function createExportBundle(report) {

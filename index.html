@@ -20,8 +20,8 @@
       <p id="monitor-status" class="selection-status">Monitoring is off. No folder access has been granted.</p><small>Launcher logs are optional. If added, choose the folder that contains `log.log`.</small>
     </section>
     <section class="panel">
-      <div><span class="step">02</span><h2>Optional player history</h2><p>Save compact session and direct combat events only on this PC. This may include player names recorded in a kill/death event; raw logs and evidence text are never stored.</p></div>
-      <label><input id="keep-history" type="checkbox"> Keep local session and combat history on this PC</label>
+      <div><span class="step">02</span><h2>Optional player history</h2><p>Save compact sessions, direct combat events, and confirmed shop purchases only on this PC. This may include player names and purchase details; raw logs and evidence text are never stored.</p></div>
+      <label><input id="keep-history" type="checkbox"> Keep local session, combat, and purchase history on this PC</label>
       <button id="clear-history" type="button" class="secondary">Delete local history</button>
       <p id="history-status" class="selection-status">History is off.</p>
       <ul id="history-list" class="selected"></ul>
@@ -32,6 +32,7 @@
       <p id="combat-history-summary" class="selection-status">No saved combat history yet.</p>
       <div id="recent-attackers" class="hidden"><h3>Recent attackers</h3><ul id="recent-attackers-list" class="selected"></ul></div>
       <ul id="combat-history-list" class="selected"></ul>
+      <section id="purchase-history-section"><h3>Local purchase history</h3><p id="purchase-history-summary" class="selection-status">No saved purchases yet.</p><ul id="purchase-history-list" class="selected"></ul></section>
     </section>
     <section class="panel">
       <div><span class="step">04</span><h2>Local privacy status</h2><p>A plain-language view of what Citizen Health can access during this browser session.</p></div>
@@ -53,11 +54,12 @@
       <section id="session-section" class="hidden"><h3>Session context</h3><dl id="session" class="snapshot"></dl></section>
       <section id="timeline-section" class="hidden"><h3>Local session timeline</h3><ul id="session-timeline" class="selected"></ul></section>
       <section id="combat-section" class="hidden"><h3>Combat history from this log</h3><p class="muted">Only direct Actor Death entries matching your logged-in handle are shown. This does not infer incapacitations or events the log did not record.</p><ul id="combat-events" class="selected"></ul></section>
+      <section id="purchases-section" class="hidden"><h3>Confirmed shop purchases from this log</h3><p class="muted">Shown only when the Game.log records both a shop purchase request and a nearby “Transaction Complete” notification. Cargo transfers and shipping are not inferred.</p><ul id="shop-purchases" class="selected"></ul></section>
       <section id="snapshot-section" class="hidden"><h3>DxDiag snapshot</h3><dl id="snapshot" class="snapshot"></dl></section>
       <details><summary>Redaction preview</summary><pre id="redaction"></pre></details>
     </section>
   </main>
   <footer><span id="app-version">Citizen Health</span> · Independent fan-made companion; not affiliated with Cloud Imperium Games.</footer>
-  <script type="module" src="src/app.js?v=13"></script>
+  <script type="module" src="src/app.js?v=14"></script>
 </body>
 </html>

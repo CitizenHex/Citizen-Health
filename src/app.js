@@ -19,11 +19,14 @@ const combatHistoryList = document.querySelector("#combat-history-list");
 const combatHistorySummary = document.querySelector("#combat-history-summary");
 const recentAttackers = document.querySelector("#recent-attackers");
 const recentAttackersList = document.querySelector("#recent-attackers-list");
+const purchaseHistoryList = document.querySelector("#purchase-history-list");
+const purchaseHistorySummary = document.querySelector("#purchase-history-summary");
 const privacyStatus = document.querySelector("#privacy-status");
 const snapshot = document.querySelector("#snapshot");
 const session = document.querySelector("#session");
 const timeline = document.querySelector("#session-timeline");
 const combatEvents = document.querySelector("#combat-events");
+const shopPurchases = document.querySelector("#shop-purchases");
 const supportSummary = document.querySelector("#support-summary");
 const copySupportSummaryButton = document.querySelector("#copy-support-summary");
 const inputCoverage = document.querySelector("#input-coverage");
@@ -70,7 +73,7 @@ function renderHistory() {
     return item;
   }));
   historyStatus.textContent = keepHistory.checked
-    ? `${records.length} local session record${records.length === 1 ? "" : "s"}. Direct combat names may be retained; raw logs are not.`
+    ? `${records.length} local session record${records.length === 1 ? "" : "s"}. Direct combat names and shop purchases may be retained; raw logs are not.`
     : "History is off. Existing local records remain until deleted.";
   renderCombatHistory(records);
 }
@@ -91,6 +94,15 @@ function renderCombatHistory(records = loadHistory()) {
   }));
   recentAttackers.classList.toggle("hidden", !summary.recentAttackers.length);
   document.querySelectorAll("[data-combat-filter]").forEach(button => button.classList.toggle("active-filter", button.dataset.combatFilter === combatHistoryFilter));
+  const purchases = records.flatMap(record => record.shopPurchases || []).toSorted((left, right) => right.at.localeCompare(left.at));
+  purchaseHistorySummary.textContent = purchases.length
+    ? `${purchases.length} confirmed shop purchase${purchases.length === 1 ? "" : "s"} saved locally.`
+    : "No saved purchases yet. Purchases require both a shop request and nearby transaction completion in the Game.log.";
+  purchaseHistoryList.replaceChildren(...purchases.map(purchase => {
+    const item = document.createElement("li");
+    item.textContent = `${purchase.at} — ${purchase.quantity}× ${purchase.item} from ${purchase.shop} (${purchase.unitPrice * purchase.quantity} ${purchase.currency})`;
+    return item;
+  }));
 }
 
 function renderPrivacyStatus() {
@@ -118,6 +130,7 @@ function recordLatestSession(nextReport) {
     outcome: lastEvent.label,
     findings: nextReport.findings.map(finding => finding.title),
     combatEvents: nextReport.combatEvents.filter(event => event.at >= startedAt).slice(-25).map(({ at, type, label, otherParty, weapon, damageType }) => ({ at, type, label, otherParty, weapon, damageType })),
+    shopPurchases: nextReport.shopPurchases.filter(purchase => purchase.at >= startedAt).slice(-50),
     updatedAt: nextReport.createdAt
   };
   const records = loadHistory().filter(existing => existing.id !== record.id);
@@ -197,6 +210,13 @@ function renderReport(nextReport, skipped = 0, automated = false) {
     return item;
   }));
   document.querySelector("#combat-section").classList.toggle("hidden", !combatEvents.children.length);
+  shopPurchases.replaceChildren(...report.shopPurchases.map(purchase => {
+    const item = document.createElement("li");
+    const total = purchase.unitPrice * purchase.quantity;
+    item.textContent = `${purchase.at} — ${purchase.quantity}× ${purchase.item} from ${purchase.shop} (${total} ${purchase.currency})`;
+    return item;
+  }));
+  document.querySelector("#purchases-section").classList.toggle("hidden", !shopPurchases.children.length);
   renderKeyValues(snapshot, report.hardwareSnapshot);
   document.querySelector("#snapshot-section").classList.toggle("hidden", !snapshot.children.length);
   document.querySelector("#redaction").textContent = report.redactedEvidence.slice(0, 5000);
@@ -294,7 +314,7 @@ keepHistory.addEventListener("change", () => {
   renderPrivacyStatus();
 });
 clearHistory.addEventListener("click", () => {
-  if (!window.confirm("Delete all Citizen Health session and combat history stored in this browser? This cannot be undone.")) return;
+  if (!window.confirm("Delete all Citizen Health session, combat, and purchase history stored in this browser? This cannot be undone.")) return;
   localStorage.removeItem(historyKey);
   renderHistory();
   renderPrivacyStatus();

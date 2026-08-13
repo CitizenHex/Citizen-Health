@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { analyze, createExportBundle, createSupportSummary, describeInputs, parseCombatEvents, parseDxDiag, parseSessionEvents, redact, selectLatestGameLog, summarizeCombatHistory } from "../src/analysis.js";
+import { analyze, createExportBundle, createSupportSummary, describeInputs, parseCombatEvents, parseDxDiag, parseSessionEvents, parseShopPurchases, redact, selectLatestGameLog, summarizeCombatHistory } from "../src/analysis.js";
 
 function fixture(name) {
   return readFileSync(new URL(`./fixtures/${name}`, import.meta.url), "utf8");
@@ -144,4 +144,9 @@ test("summarizes saved combat history without source logs", () => {
   assert.equal(summary.totalKills, 1);
   assert.deepEqual(summary.recentAttackers, [["PirateTwo", 2]]);
   assert.equal(summarizeCombatHistory(records, "player-death").events.length, 2);
+});
+
+test("records shop purchases only after a nearby transaction completion", () => {
+  const text = `<2026-08-13T19:10:00.000Z> <CEntityComponentShoppingProvider::SendStandardItemBuyRequest> Sending SShopBuyRequest - playerId[1] shopName[SCShop_Test] kioskId[0] client_price[7.000000] itemName[Drink_bottle_smoothie_01_a] quantity[2] currencyType[UEC]\n<2026-08-13T19:10:00.700Z> <SHUDEvent_OnNotification> Added notification "Transaction Complete: "\n<2026-08-13T19:11:00.000Z> <CEntityComponentShoppingProvider::SendStandardItemBuyRequest> Sending SShopBuyRequest - playerId[1] shopName[SCShop_Test] kioskId[0] client_price[10.000000] itemName[Unconfirmed_Item] quantity[1] currencyType[UEC]`;
+  assert.deepEqual(parseShopPurchases(text), [{ at: "2026-08-13T19:10:00.000Z", shop: "SCShop_Test", item: "Drink bottle smoothie 01 a", quantity: 2, unitPrice: 7, currency: "UEC" }]);
 });
