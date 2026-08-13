@@ -47,11 +47,25 @@ function renderHistory() {
   const records = loadHistory();
   historyList.replaceChildren(...records.map(record => {
     const item = document.createElement("li");
-    item.textContent = `${record.startedAt} — ${record.outcome} (${record.findings.join(", ") || "no finding"})`;
+    const heading = document.createElement("div");
+    heading.textContent = `${record.startedAt} — ${record.outcome} (${record.findings.join(", ") || "no finding"})`;
+    item.append(heading);
+    if (record.combatEvents?.length) {
+      const details = document.createElement("details");
+      const summary = document.createElement("summary"); summary.textContent = `${record.combatEvents.length} direct combat event${record.combatEvents.length === 1 ? "" : "s"}`;
+      const events = document.createElement("ul");
+      events.replaceChildren(...record.combatEvents.map(event => {
+        const eventItem = document.createElement("li");
+        const context = [event.weapon && `weapon: ${event.weapon}`, event.damageType && `damage: ${event.damageType}`].filter(Boolean).join(" · ");
+        eventItem.textContent = `${event.at} — ${event.label}${context ? ` (${context})` : ""}`;
+        return eventItem;
+      }));
+      details.append(summary, events); item.append(details);
+    }
     return item;
   }));
   historyStatus.textContent = keepHistory.checked
-    ? `${records.length} local session record${records.length === 1 ? "" : "s"}. Raw logs are not retained.`
+    ? `${records.length} local session record${records.length === 1 ? "" : "s"}. Direct combat names may be retained; raw logs are not.`
     : "History is off. Existing local records remain until deleted.";
 }
 
@@ -79,6 +93,7 @@ function recordLatestSession(nextReport) {
     startedAt,
     outcome: lastEvent.label,
     findings: nextReport.findings.map(finding => finding.title),
+    combatEvents: nextReport.combatEvents.filter(event => event.at >= startedAt).slice(-25).map(({ at, type, label, weapon, damageType }) => ({ at, type, label, weapon, damageType })),
     updatedAt: nextReport.createdAt
   };
   const records = loadHistory().filter(existing => existing.id !== record.id);
@@ -255,7 +270,7 @@ keepHistory.addEventListener("change", () => {
   renderPrivacyStatus();
 });
 clearHistory.addEventListener("click", () => {
-  if (!window.confirm("Delete all Citizen Health session history stored in this browser? This cannot be undone.")) return;
+  if (!window.confirm("Delete all Citizen Health session and combat history stored in this browser? This cannot be undone.")) return;
   localStorage.removeItem(historyKey);
   renderHistory();
   renderPrivacyStatus();

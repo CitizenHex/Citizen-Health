@@ -20,8 +20,8 @@
       <p id="monitor-status" class="selection-status">Monitoring is off. No folder access has been granted.</p><small>Launcher logs are optional. If added, choose the folder that contains `log.log`.</small>
     </section>
     <section class="panel">
-      <div><span class="step">02</span><h2>Optional player history</h2><p>Save a compact session timeline only on this PC. Raw logs and evidence text are never stored in history.</p></div>
-      <label><input id="keep-history" type="checkbox"> Keep local session history on this PC</label>
+      <div><span class="step">02</span><h2>Optional player history</h2><p>Save compact session and direct combat events only on this PC. This may include player names recorded in a kill/death event; raw logs and evidence text are never stored.</p></div>
+      <label><input id="keep-history" type="checkbox"> Keep local session and combat history on this PC</label>
       <button id="clear-history" type="button" class="secondary">Delete local history</button>
       <p id="history-status" class="selection-status">History is off.</p>
       <ul id="history-list" class="selected"></ul>
@@ -29,7 +29,7 @@
     <section class="panel">
       <div><span class="step">03</span><h2>Local privacy status</h2><p>A plain-language view of what Citizen Health can access during this browser session.</p></div>
       <dl id="privacy-status" class="snapshot"></dl>
-      <small>Folder selections and analyzed reports stay in page memory. Closing this tab clears them. Local session history is the only optional browser storage.</small>
+      <small>Folder selections and analyzed reports stay in page memory. Closing this tab clears them. Local history, including direct combat names when opted in, is the only optional browser storage.</small>
     </section>
     <section class="panel">
       <div><span class="step">04</span><h2>Analyze selected files</h2><p>Use this for a one-off report or to add a launcher log and DxDiag.</p></div>
@@ -51,6 +51,6 @@
     </section>
   </main>
   <footer><span id="app-version">Citizen Health</span> · Independent fan-made companion; not affiliated with Cloud Imperium Games.</footer>
-  <script type="module" src="src/app.js?v=11"></script>
+  <script type="module" src="src/app.js?v=12"></script>
 </body>
 </html>

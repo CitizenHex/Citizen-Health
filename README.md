@@ -23,7 +23,7 @@ When monitored log evidence changes, Citizen Health displays an in-app notice fo
 
 The first player-log view is a session timeline: confirmed gameplay entry, in-game disconnects, and application exit markers. It intentionally does not infer player actions, missions, locations, or causes that the logs do not establish.
 
-Player history is off by default. When enabled, it stores up to 100 compact records in the browser on that PC: session-start time, latest observed outcome, finding titles, and update time. It never stores raw logs, source paths, complete evidence lines, or binary dumps. Users can disable future recording or delete all stored history from the app.
+Player history is off by default. When enabled, it stores up to 100 compact records in the browser on that PC: session-start time, latest observed outcome, finding titles, update time, and up to 25 direct kill/death events from the session. Combat records may contain player or NPC names, a weapon label, and damage type, but never raw logs, source paths, complete evidence lines, or binary dumps. Users can disable future recording or delete all stored history from the app.
 
 ## MVP scope
 
