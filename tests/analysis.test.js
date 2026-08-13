@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { analyze, createExportBundle, createSupportSummary, parseDxDiag, parseSessionEvents, redact, selectLatestGameLog } from "../src/analysis.js";
+import { analyze, createExportBundle, createSupportSummary, describeInputs, parseDxDiag, parseSessionEvents, redact, selectLatestGameLog } from "../src/analysis.js";
 
 function fixture(name) {
   return readFileSync(new URL(`./fixtures/${name}`, import.meta.url), "utf8");
@@ -57,6 +57,14 @@ test("recognizes a clean game exit instead of calling it a network failure", () 
 test("does not call an in-game Socpak link warning damaged game data", () => {
   const report = analyze([{ name: "Game.log", text: "Socpak(Data/objectcontainers/example.socpak) - Failed to link to exported shop when loading" }]);
   assert.equal(report.findings[0].id, "unknown");
+  assert.match(report.findings[0].evidence, /Game\.log/);
+  assert.match(report.findings[0].action, /matching launcher log/);
+});
+
+test("describes only supplied and optional diagnostic inputs", () => {
+  const coverage = describeInputs([{ name: "Game.log", text: "" }, { name: "DxDiag.txt", text: "" }]);
+  assert.deepEqual(coverage.present, ["Game.log", "DxDiag"]);
+  assert.deepEqual(coverage.missing, ["matching launcher log", "crash-handler text"]);
 });
 
 test("uses only the newest dated Game backup", () => {

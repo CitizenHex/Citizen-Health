@@ -21,6 +21,7 @@ const session = document.querySelector("#session");
 const timeline = document.querySelector("#session-timeline");
 const supportSummary = document.querySelector("#support-summary");
 const copySupportSummaryButton = document.querySelector("#copy-support-summary");
+const inputCoverage = document.querySelector("#input-coverage");
 const appVersionLabel = document.querySelector("#app-version");
 const supportedExtensions = /\.(log|txt|json|xml)$/i;
 const maxTextFileSize = 25 * 1024 * 1024;
@@ -152,6 +153,7 @@ function renderReport(nextReport, skipped = 0, automated = false) {
   renderKeyValues(snapshot, report.hardwareSnapshot);
   document.querySelector("#snapshot-section").classList.toggle("hidden", !snapshot.children.length);
   document.querySelector("#redaction").textContent = report.redactedEvidence.slice(0, 5000);
+  inputCoverage.textContent = `Analyzed: ${report.inputCoverage.present.join(", ") || "selected text files"}. Optional inputs not included: ${report.inputCoverage.missing.join(", ") || "none"}.`;
   supportSummary.textContent = createSupportSummary(report);
   copySupportSummaryButton.textContent = "Copy summary";
   document.querySelector("#results").classList.remove("hidden");

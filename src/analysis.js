@@ -88,15 +88,31 @@ export function selectLatestGameLog(files) {
   return { files: files.filter(file => !gameLogs.includes(file) || file === latest), skippedFileNames: gameLogs.filter(file => file !== latest).map(file => file.name) };
 }
 
+export function describeInputs(files) {
+  const names = files.map(file => file.name);
+  const hasGameLog = names.some(name => /^game(?:\s|\.|$)/i.test(name));
+  const hasLauncherLog = names.some(name => /^log\.log$/i.test(name) || /launcher/i.test(name));
+  const hasCrashText = names.some(name => /(crash|exception|error|handler)/i.test(name) && !/^game/i.test(name));
+  const hasDxDiag = names.some(name => /dxdiag/i.test(name));
+  const present = [hasGameLog && "Game.log", hasLauncherLog && "launcher log", hasCrashText && "crash-handler text", hasDxDiag && "DxDiag"].filter(Boolean);
+  const missing = [!hasGameLog && "Game.log", !hasLauncherLog && "matching launcher log", !hasCrashText && "crash-handler text", !hasDxDiag && "DxDiag"].filter(Boolean);
+  return { present, missing };
+}
+
 export function analyze(files) {
   const selection = selectLatestGameLog(files);
+  const inputCoverage = describeInputs(selection.files);
   const joined = selection.files.map(file => `--- ${file.name} ---\n${file.text}`).join("\n");
   let findings = rules.filter(rule => rule.pattern.test(joined)).map(({ pattern, ...finding }) => ({ ...finding, evidenceLines: evidenceLines(joined, pattern) }));
   if (findings.some(finding => finding.id === "controlled-exit")) findings = findings.filter(finding => finding.id !== "network");
-  if (!findings.length) findings.push({ id: "unknown", confidence: "low", title: "No recognized cause", evidence: "The selected files do not contain a supported diagnostic signature.", evidenceLines: [], action: "Add Game.log, launcher log, crash-handler text, and DxDiag if available. Do not assume the PC is at fault.", link: "https://support.robertsspaceindustries.com/hc/en-us/articles/360000065688-Send-In-Game-Files-for-RSI-Support" });
+  if (!findings.length) {
+    const analyzed = inputCoverage.present.length ? inputCoverage.present.join(", ") : "selected text files";
+    const nextInput = inputCoverage.missing.length ? ` If available, add ${inputCoverage.missing.join(", ")}.` : " The usual supporting inputs are already present.";
+    findings.push({ id: "unknown", confidence: "low", title: "No recognized cause", evidence: `No supported diagnostic signature was found in: ${analyzed}.`, evidenceLines: [], action: `Do not assume the PC is at fault.${nextInput}`, link: "https://support.robertsspaceindustries.com/hc/en-us/articles/360000065688-Send-In-Game-Files-for-RSI-Support" });
+  }
   const dxDiag = selection.files.find(file => /dxdiag/i.test(file.name));
   const gameLog = selection.files.find(file => /game/i.test(file.name));
-  return { createdAt: new Date().toISOString(), fileNames: selection.files.map(file => file.name), skippedFileNames: selection.skippedFileNames, findings, session: parseSession(gameLog), sessionEvents: gameLog ? parseSessionEvents(gameLog.text) : [], hardwareSnapshot: dxDiag ? parseDxDiag(dxDiag.text) : {}, redactedEvidence: redact(joined) };
+  return { createdAt: new Date().toISOString(), fileNames: selection.files.map(file => file.name), skippedFileNames: selection.skippedFileNames, inputCoverage, findings, session: parseSession(gameLog), sessionEvents: gameLog ? parseSessionEvents(gameLog.text) : [], hardwareSnapshot: dxDiag ? parseDxDiag(dxDiag.text) : {}, redactedEvidence: redact(joined) };
 }
 
 export function createExportBundle(report) {
@@ -107,6 +123,7 @@ export function createExportBundle(report) {
     createdAt: report.createdAt,
     analyzedFiles: report.fileNames,
     skippedOlderGameLogs: report.skippedFileNames,
+    inputCoverage: report.inputCoverage,
     session: report.session,
     sessionEvents: report.sessionEvents,
     hardwareSnapshot: report.hardwareSnapshot,
