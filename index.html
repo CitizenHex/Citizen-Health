@@ -11,55 +11,86 @@
   <main>
     <section class="safety"><strong>Read-only by design</strong><span>No injection</span><span>No memory access</span><span>No automation</span><span>No uploads</span></section>
     <section id="activity-notice" class="safety hidden" aria-live="polite"></section>
-    <section class="panel">
-      <div><span class="step">01</span><h2>Optional local monitoring</h2><p>Choose your Star Citizen LIVE folder once. Citizen Health reads only the newest Game log while this page is open.</p></div>
-      <button id="choose-live-folder" type="button">Choose LIVE folder</button>
-      <button id="choose-launcher-folder" type="button" class="secondary">Add launcher logs folder</button>
-      <button id="monitor-live-folder" type="button" class="secondary" disabled>Enable local monitoring</button>
-      <button id="forget-folders" type="button" class="secondary" disabled>Forget selected folders</button>
-      <p id="monitor-status" class="selection-status">Monitoring is off. No folder access has been granted.</p><small>Launcher logs are optional. If added, choose the folder that contains `log.log`.</small>
+
+    <nav class="tab-list" role="tablist" aria-label="Citizen Health sections">
+      <button type="button" role="tab" id="tab-crash" aria-selected="true" aria-controls="panel-crash" data-tab="crash">Crash &amp; performance</button>
+      <button type="button" role="tab" id="tab-combat" aria-selected="false" aria-controls="panel-combat" data-tab="combat">Combat</button>
+      <button type="button" role="tab" id="tab-shipping" aria-selected="false" aria-controls="panel-shipping" data-tab="shipping">Shipping</button>
+      <button type="button" role="tab" id="tab-purchases" aria-selected="false" aria-controls="panel-purchases" data-tab="purchases">Purchases</button>
+      <button type="button" role="tab" id="tab-settings" aria-selected="false" aria-controls="panel-settings" data-tab="settings">Settings</button>
+    </nav>
+
+    <section id="panel-crash" class="tab-panel" role="tabpanel" aria-labelledby="tab-crash" data-tab-panel="crash">
+      <section class="panel">
+        <div><span class="step">01</span><h2>Analyze selected files</h2><p>Use this for a one-off crash or performance report. Files stay in this browser tab.</p></div>
+        <div class="picker"><input id="files" type="file" multiple accept=".log,.txt,.json,.xml" style="position:static; opacity:1;"><span>Choose logs and diagnostics</span><small>Game.log, launcher log, crash-handler text, optional DxDiag. Binary dumps are not read or exported.</small></div>
+        <ul id="selected" class="selected"></ul>
+        <p id="selection-status" class="selection-status">No files selected yet.</p>
+        <button id="analyze" disabled>Analyze selected files</button>
+      </section>
+      <section id="results" class="panel hidden" aria-live="polite">
+        <div class="result-head"><div><span class="step">02</span><h2>Evidence-based findings</h2></div><button id="export" class="secondary">Export redacted bundle</button></div>
+        <p id="summary"></p><div id="findings" class="findings"></div>
+        <section id="input-coverage-section" class="input-coverage"><h3>Analysis coverage</h3><p id="input-coverage"></p></section>
+        <section id="support-summary-section"><div class="result-head"><h3>Redacted support summary</h3><button id="copy-support-summary" class="secondary" type="button">Copy summary</button></div><p class="muted">A concise, readable summary for a support request. Review it before sharing.</p><pre id="support-summary" class="support-summary"></pre></section>
+        <section id="session-section" class="hidden"><h3>Session context</h3><dl id="session" class="snapshot"></dl></section>
+        <section id="timeline-section" class="hidden"><h3>Local session timeline</h3><ul id="session-timeline" class="selected"></ul></section>
+        <section id="snapshot-section" class="hidden"><h3>DxDiag snapshot</h3><dl id="snapshot" class="snapshot"></dl></section>
+        <details><summary>Redaction preview</summary><pre id="redaction"></pre></details>
+      </section>
     </section>
-    <section class="panel">
-      <div><span class="step">02</span><h2>Optional player history</h2><p>Save compact sessions, direct combat events, and confirmed shop purchases only on this PC. This may include player names and purchase details; raw logs and evidence text are never stored.</p></div>
-      <label><input id="keep-history" type="checkbox"> Keep local session, combat, and purchase history on this PC</label>
-      <button id="clear-history" type="button" class="secondary">Delete local history</button>
-      <p id="history-status" class="selection-status">History is off.</p>
-      <ul id="history-list" class="selected"></ul>
+
+    <section id="panel-combat" class="tab-panel hidden" role="tabpanel" aria-labelledby="tab-combat" data-tab-panel="combat">
+      <section class="panel">
+        <div><span class="step">COMBAT</span><h2>Saved combat history</h2><p>Shows confirmed kills and deaths saved while local history was enabled. Damage, attacks, and incapacitations are not currently tracked.</p></div>
+        <div class="filter-row" role="group" aria-label="Combat history filter"><button type="button" class="secondary active-filter" data-combat-filter="all">All</button><button type="button" class="secondary" data-combat-filter="player-death">Deaths</button><button type="button" class="secondary" data-combat-filter="player-kill">Kills</button></div>
+        <p id="combat-history-summary" class="selection-status">No saved combat history yet. Citizen Health cannot reconstruct events from before local history was enabled.</p>
+        <div id="recent-attackers" class="hidden"><h3>Recent attackers</h3><ul id="recent-attackers-list" class="selected"></ul></div>
+        <ul id="combat-history-list" class="selected"></ul>
+      </section>
+      <section id="combat-section" class="panel hidden"><h2>Confirmed kills and deaths from this log</h2><p class="muted">Only direct Actor Death entries matching your logged-in handle are shown. This does not infer incapacitations, damage, attacks, or events the log did not record.</p><ul id="combat-events" class="selected"></ul></section>
     </section>
-    <section class="panel">
-      <div><span class="step">03</span><h2>Saved combat history</h2><p>Shows only confirmed kills and deaths saved after local history was enabled. It does not currently track damage, attacks, or incapacitations.</p></div>
-      <div class="filter-row" role="group" aria-label="Combat history filter"><button type="button" class="secondary active-filter" data-combat-filter="all">All</button><button type="button" class="secondary" data-combat-filter="player-death">Deaths</button><button type="button" class="secondary" data-combat-filter="player-kill">Kills</button></div>
-      <p id="combat-history-summary" class="selection-status">No saved combat history yet. Citizen Health cannot reconstruct events from before local history was enabled.</p>
-      <div id="recent-attackers" class="hidden"><h3>Recent attackers</h3><ul id="recent-attackers-list" class="selected"></ul></div>
-      <ul id="combat-history-list" class="selected"></ul>
-      <section id="purchase-history-section"><h3>Local purchase history</h3><p id="purchase-history-summary" class="selection-status">No saved purchases yet.</p><ul id="purchase-history-list" class="selected"></ul></section>
+
+    <section id="panel-shipping" class="tab-panel hidden" role="tabpanel" aria-labelledby="tab-shipping" data-tab-panel="shipping">
+      <section class="panel empty-state">
+        <span class="step">SHIPPING</span><h2>Cargo and shipping history</h2>
+        <p>Not available yet. Citizen Health will only show a shipment when the local Game.log contains a dependable commodity name and a matching completion record.</p>
+        <p class="muted">Cargo elevator and transfer messages alone are not enough evidence, so they are intentionally not presented as shipments.</p>
+      </section>
     </section>
-    <section class="panel">
-      <div><span class="step">04</span><h2>Local privacy status</h2><p>A plain-language view of what Citizen Health can access during this browser session.</p></div>
-      <dl id="privacy-status" class="snapshot"></dl>
-      <small>Folder selections and analyzed reports stay in page memory. Closing this tab clears them. Local history, including direct combat names when opted in, is the only optional browser storage.</small>
+
+    <section id="panel-purchases" class="tab-panel hidden" role="tabpanel" aria-labelledby="tab-purchases" data-tab-panel="purchases">
+      <section class="panel">
+        <div><span class="step">PURCHASES</span><h2>Local purchase history</h2><p>Confirmed shop purchases saved on this PC while local history was enabled.</p></div>
+        <p id="purchase-history-summary" class="selection-status">No saved purchases yet.</p><ul id="purchase-history-list" class="selected"></ul>
+      </section>
+      <section id="purchases-section" class="panel hidden"><h2>Confirmed shop purchases from this log</h2><p class="muted">Shown only when the Game.log records both a shop purchase request and nearby “Transaction Complete” notification. Cargo transfers and shipping are not inferred.</p><ul id="shop-purchases" class="selected"></ul></section>
     </section>
-    <section class="panel">
-      <div><span class="step">05</span><h2>Analyze selected files</h2><p>Use this for a one-off report or to add a launcher log and DxDiag.</p></div>
-      <div class="picker"><input id="files" type="file" multiple accept=".log,.txt,.json,.xml,.dmp,.mdmp" style="position:static; opacity:1;"><span>Choose logs and diagnostics</span><small>Game.log, launcher log, crash-handler text, optional DxDiag. Binary dumps are not read or exported.</small></div>
-      <ul id="selected" class="selected"></ul>
-      <p id="selection-status" class="selection-status">No files selected yet.</p>
-      <button id="analyze" disabled>Analyze selected files</button>
-    </section>
-    <section id="results" class="panel hidden" aria-live="polite">
-      <div class="result-head"><div><span class="step">06</span><h2>Evidence-based findings</h2></div><button id="export" class="secondary">Export redacted bundle</button></div>
-      <p id="summary"></p><div id="findings" class="findings"></div>
-      <section id="input-coverage-section" class="input-coverage"><h3>Analysis coverage</h3><p id="input-coverage"></p></section>
-      <section id="support-summary-section"><div class="result-head"><h3>Redacted support summary</h3><button id="copy-support-summary" class="secondary" type="button">Copy summary</button></div><p class="muted">A concise, readable summary for a support request. Review it before sharing.</p><pre id="support-summary" class="support-summary"></pre></section>
-      <section id="session-section" class="hidden"><h3>Session context</h3><dl id="session" class="snapshot"></dl></section>
-      <section id="timeline-section" class="hidden"><h3>Local session timeline</h3><ul id="session-timeline" class="selected"></ul></section>
-      <section id="combat-section" class="hidden"><h3>Confirmed kills and deaths from this log</h3><p class="muted">Only direct Actor Death entries matching your logged-in handle are shown. This does not infer incapacitations, damage, attacks, or events the log did not record.</p><ul id="combat-events" class="selected"></ul></section>
-      <section id="purchases-section" class="hidden"><h3>Confirmed shop purchases from this log</h3><p class="muted">Shown only when the Game.log records both a shop purchase request and a nearby “Transaction Complete” notification. Cargo transfers and shipping are not inferred.</p><ul id="shop-purchases" class="selected"></ul></section>
-      <section id="snapshot-section" class="hidden"><h3>DxDiag snapshot</h3><dl id="snapshot" class="snapshot"></dl></section>
-      <details><summary>Redaction preview</summary><pre id="redaction"></pre></details>
+
+    <section id="panel-settings" class="tab-panel hidden" role="tabpanel" aria-labelledby="tab-settings" data-tab-panel="settings">
+      <section class="panel">
+        <div><span class="step">SETTINGS</span><h2>Local monitoring</h2><p>Choose your Star Citizen LIVE folder once. Citizen Health reads only the newest Game log while this page is open.</p></div>
+        <button id="choose-live-folder" type="button">Choose LIVE folder</button>
+        <button id="choose-launcher-folder" type="button" class="secondary">Add launcher logs folder</button>
+        <button id="monitor-live-folder" type="button" class="secondary" disabled>Enable local monitoring</button>
+        <button id="forget-folders" type="button" class="secondary" disabled>Forget selected folders</button>
+        <p id="monitor-status" class="selection-status">Monitoring is off. No folder access has been granted.</p><small>Launcher logs are optional. If added, choose the folder that contains <code>log.log</code>.</small>
+      </section>
+      <section class="panel">
+        <div><span class="step">LOCAL DATA</span><h2>Optional player history</h2><p>Save compact sessions, direct combat events, and confirmed shop purchases only on this PC. This may include player names and purchase details; raw logs and evidence text are never stored.</p></div>
+        <label><input id="keep-history" type="checkbox"> Keep local session, combat, and purchase history on this PC</label>
+        <button id="clear-history" type="button" class="secondary">Delete local history</button>
+        <p id="history-status" class="selection-status">History is off.</p>
+        <ul id="history-list" class="selected"></ul>
+      </section>
+      <section class="panel">
+        <div><span class="step">PRIVACY</span><h2>Local privacy status</h2><p>A plain-language view of what Citizen Health can access during this browser session.</p></div>
+        <dl id="privacy-status" class="snapshot"></dl>
+        <small>Folder selections and analyzed reports stay in page memory. Closing this tab clears them. Local history, including direct combat names when opted in, is the only optional browser storage.</small>
+      </section>
     </section>
   </main>
   <footer><span id="app-version">Citizen Health</span> · Independent fan-made companion; not affiliated with Cloud Imperium Games.</footer>
-  <script type="module" src="src/app.js?v=15"></script>
+  <script type="module" src="src/app.js?v=16"></script>
 </body>
 </html>

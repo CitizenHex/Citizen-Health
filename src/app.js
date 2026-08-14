@@ -31,6 +31,8 @@ const supportSummary = document.querySelector("#support-summary");
 const copySupportSummaryButton = document.querySelector("#copy-support-summary");
 const inputCoverage = document.querySelector("#input-coverage");
 const appVersionLabel = document.querySelector("#app-version");
+const tabs = [...document.querySelectorAll("[data-tab]")];
+const tabPanels = [...document.querySelectorAll("[data-tab-panel]")];
 const supportedExtensions = /\.(log|txt|json|xml)$/i;
 const maxTextFileSize = 25 * 1024 * 1024;
 let report;
@@ -42,6 +44,15 @@ let lastActivityKey;
 let combatHistoryFilter = "all";
 const historyKey = "citizen-health.session-history.v1";
 const historyEnabledKey = "citizen-health.session-history-enabled.v1";
+
+function selectTab(tabName) {
+  tabs.forEach(tab => {
+    const selected = tab.dataset.tab === tabName;
+    tab.setAttribute("aria-selected", String(selected));
+    tab.classList.toggle("active-tab", selected);
+  });
+  tabPanels.forEach(panel => panel.classList.toggle("hidden", panel.dataset.tabPanel !== tabName));
+}
 
 function loadHistory() {
   try { return JSON.parse(localStorage.getItem(historyKey) || "[]"); } catch { return []; }
@@ -224,6 +235,7 @@ function renderReport(nextReport, skipped = 0, automated = false) {
   supportSummary.textContent = createSupportSummary(report);
   copySupportSummaryButton.textContent = "Copy summary";
   document.querySelector("#results").classList.remove("hidden");
+  if (!automated) selectTab("crash");
   renderPrivacyStatus();
 }
 
@@ -302,6 +314,7 @@ async function checkLiveFolder() {
 
 input.addEventListener("change", updateSelection);
 input.addEventListener("input", updateSelection);
+tabs.forEach(tab => tab.addEventListener("click", () => selectTab(tab.dataset.tab)));
 
 keepHistory.checked = localStorage.getItem(historyEnabledKey) === "true";
 appVersionLabel.textContent = `Citizen Health ${appVersion}`;
