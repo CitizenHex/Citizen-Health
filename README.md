@@ -2,13 +2,13 @@
 
 **A private, read-only Star Citizen crash and player-history companion.**
 
-Citizen Health turns locally selected game diagnostics into evidence-based crash findings, a redacted support summary, and an optional local history of confirmed sessions, combat events, and shop purchases.
+Citizen Health turns locally selected game diagnostics into evidence-based crash findings, a redacted support summary, and local history of confirmed sessions, combat events, and shop purchases.
 
 ## Highlights
 
 - **Private by design** — no injection, game-memory access, input automation, network capture, uploads, telemetry, or automatic filesystem scanning.
 - **Evidence before advice** — crash findings identify the triggering log evidence and state confidence rather than guessing.
-- **Local player history** — optionally retain confirmed sessions, direct kills/deaths, recent attackers, and confirmed shop purchases in this browser on this PC.
+- **Local player history** — retain confirmed sessions, direct kills/deaths, recent attackers, and confirmed shop purchases in this browser on this PC.
 - **Safe sharing** — export a minimal redacted report or copy a readable support summary; raw logs, paths, binary dumps, and unrelated log text are excluded.
 - **No runtime dependencies** — a small local web app that binds only to `127.0.0.1`.
 
@@ -19,7 +19,7 @@ Citizen Health turns locally selected game diagnostics into evidence-based crash
 1. Double-click `Start-Citizen-Health.cmd` on this development PC.
 2. Open the local address it launches (`http://127.0.0.1:4173`).
 3. Select `Game.log` and any optional supporting diagnostics, then choose **Analyze selected files**.
-4. For temporary live monitoring, explicitly choose the Star Citizen `LIVE` folder and enable monitoring while the tab is open.
+4. Choose the Star Citizen `LIVE` folder once. Citizen Health remembers that choice and starts monitoring whenever the browser still grants folder access.
 
 Do not open `index.html` directly: browsers may render the page without executing its local analysis code.
 
@@ -29,8 +29,8 @@ Citizen Health reads only `.log`, `.txt`, `.json`, and `.xml` text files at or b
 
 - Folder selection is explicit, read-only, and held only in page memory.
 - Monitoring checks only the current `Game.log` (or newest backup) every 15 seconds while the page remains open. An optional selected launcher folder contributes only `log.log`.
-- **Forget selected folders** immediately stops monitoring and clears folder access from the tab.
-- Local history is off by default and can be deleted from the app at any time.
+- **Reset saved folders** immediately stops monitoring and clears the saved folder selection.
+- Local history is on by default, remains only in this browser on this PC, and can be disabled or deleted at any time.
 - The local server is restricted to `127.0.0.1`; the browser security policy blocks outbound connections.
 
 See [SECURITY.md](SECURITY.md) for the enforceable product policy.
@@ -57,13 +57,13 @@ The app creates a minimal JSON export and a copyable support summary. Both inclu
 
 ### Live local monitoring
 
-When enabled for a user-selected `LIVE` folder, Citizen Health displays in-app notices for a confirmed session start, disconnect, normal exit, or recognized crash signature. It does not request operating-system notification permission and never runs as a background service.
+After a user selects a `LIVE` folder once, Citizen Health starts monitoring automatically whenever it is open and the browser still grants folder access. It displays in-app notices for a confirmed session start, disconnect, normal exit, or recognized crash signature. It does not request operating-system notification permission and never runs as a background service.
 
 ### Session and combat history
 
 The session timeline includes only confirmed gameplay entry, in-game disconnects, and application-exit markers. It does not infer missions, locations, actions, or causes from ambiguous log content.
 
-When local history is enabled, Citizen Health stores up to 100 compact session records. A session can retain up to 25 direct `Actor Death` events, including the recorded killer or victim name, weapon, and damage type. The combat view offers All, Deaths, and Kills filters plus a local recent-attacker summary. It does not currently track general incoming damage, attacks, or incapacitations, and it does not infer events the log did not record.
+By default, Citizen Health stores up to 100 compact session records. A session can retain up to 25 direct `Actor Death` events, including the recorded killer or victim name, weapon, and damage type. The combat view offers All, Deaths, and Kills filters plus a local recent-attacker summary. It does not currently track general incoming damage, attacks, or incapacitations, and it does not infer events the log did not record.
 
 ### Confirmed shop purchases
 

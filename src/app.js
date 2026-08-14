@@ -31,6 +31,9 @@ const supportSummary = document.querySelector("#support-summary");
 const copySupportSummaryButton = document.querySelector("#copy-support-summary");
 const inputCoverage = document.querySelector("#input-coverage");
 const appVersionLabel = document.querySelector("#app-version");
+const homeTitle = document.querySelector("#home-title");
+const homeStatus = document.querySelector("#home-status");
+const homeSetupButton = document.querySelector("#home-setup");
 const tabs = [...document.querySelectorAll("[data-tab]")];
 const tabPanels = [...document.querySelectorAll("[data-tab-panel]")];
 const supportedExtensions = /\.(log|txt|json|xml)$/i;
@@ -44,6 +47,50 @@ let lastActivityKey;
 let combatHistoryFilter = "all";
 const historyKey = "citizen-health.session-history.v1";
 const historyEnabledKey = "citizen-health.session-history-enabled.v1";
+const folderStoreName = "folder-selections";
+const folderRecordId = "saved-folders";
+
+function openFolderStore() {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open("citizen-health.settings.v1", 1);
+    request.onupgradeneeded = () => request.result.createObjectStore(folderStoreName, { keyPath: "id" });
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+}
+
+async function saveFolders() {
+  const database = await openFolderStore();
+  await new Promise((resolve, reject) => {
+    const transaction = database.transaction(folderStoreName, "readwrite");
+    transaction.objectStore(folderStoreName).put({ id: folderRecordId, liveDirectory, launcherDirectory });
+    transaction.oncomplete = resolve;
+    transaction.onerror = () => reject(transaction.error);
+  });
+  database.close();
+}
+
+async function loadSavedFolders() {
+  const database = await openFolderStore();
+  const saved = await new Promise((resolve, reject) => {
+    const request = database.transaction(folderStoreName, "readonly").objectStore(folderStoreName).get(folderRecordId);
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+  database.close();
+  return saved;
+}
+
+async function clearSavedFolders() {
+  const database = await openFolderStore();
+  await new Promise((resolve, reject) => {
+    const transaction = database.transaction(folderStoreName, "readwrite");
+    transaction.objectStore(folderStoreName).delete(folderRecordId);
+    transaction.oncomplete = resolve;
+    transaction.onerror = () => reject(transaction.error);
+  });
+  database.close();
+}
 
 function selectTab(tabName) {
   tabs.forEach(tab => {
@@ -52,6 +99,24 @@ function selectTab(tabName) {
     tab.classList.toggle("active-tab", selected);
   });
   tabPanels.forEach(panel => panel.classList.toggle("hidden", panel.dataset.tabPanel !== tabName));
+}
+
+function renderHomeStatus() {
+  if (!liveDirectory) {
+    homeTitle.textContent = "Set up Citizen Health";
+    homeStatus.textContent = "Choose your Star Citizen LIVE folder once. After that, Citizen Health will watch your game automatically whenever it is open.";
+    homeSetupButton.textContent = "Choose game folder";
+    homeSetupButton.classList.remove("hidden");
+    return;
+  }
+  homeSetupButton.classList.add("hidden");
+  if (monitorTimer) {
+    homeTitle.textContent = "Watching your game";
+    homeStatus.textContent = "Citizen Health is watching your latest game activity and saving your history on this PC.";
+  } else {
+    homeTitle.textContent = "Game folder is ready";
+    homeStatus.textContent = "Open Settings and choose Start watching to reconnect Citizen Health to your game.";
+  }
 }
 
 function loadHistory() {
@@ -118,14 +183,15 @@ function renderCombatHistory(records = loadHistory()) {
 
 function renderPrivacyStatus() {
   renderKeyValues(privacyStatus, {
-    liveFolder: liveDirectory ? "Selected for this tab" : "Not selected",
-    launcherFolder: launcherDirectory ? "Selected for this tab" : "Not selected",
+    liveFolder: liveDirectory ? "Saved on this PC" : "Not selected",
+    launcherFolder: launcherDirectory ? "Saved on this PC" : "Not selected",
     monitoring: monitorTimer ? "On while this tab stays open" : "Off",
     analyzedReport: report ? "In this tab only" : "None",
     localHistory: keepHistory.checked ? `${loadHistory().length} compact record${loadHistory().length === 1 ? "" : "s"}` : "Off",
     networkUploads: "Never"
   });
   forgetFoldersButton.disabled = !liveDirectory && !launcherDirectory;
+  renderHomeStatus();
 }
 
 function recordLatestSession(nextReport) {
@@ -256,15 +322,31 @@ async function readFilesSafely(files) {
 function stopMonitoring(message, forgetFolders = false) {
   if (monitorTimer) clearInterval(monitorTimer);
   monitorTimer = undefined;
-  monitorButton.textContent = "Enable local monitoring";
+  monitorButton.textContent = "Start watching";
   if (forgetFolders) {
     liveDirectory = undefined;
     launcherDirectory = undefined;
     lastObservedFingerprint = undefined;
     monitorButton.disabled = true;
+    clearSavedFolders().catch(() => {});
   }
   monitorStatus.textContent = message;
   renderPrivacyStatus();
+}
+
+async function startMonitoring() {
+  if (!liveDirectory) return;
+  await checkLiveFolder();
+  monitorTimer = setInterval(checkLiveFolder, 15000);
+  monitorButton.textContent = "Stop watching";
+  renderPrivacyStatus();
+}
+
+async function canReadFolder(directory, request = false) {
+  if (!directory?.queryPermission) return false;
+  const permission = await directory.queryPermission({ mode: "read" });
+  if (permission === "granted") return true;
+  return request && (await directory.requestPermission({ mode: "read" })) === "granted";
 }
 
 async function latestGameLogFrom(directory) {
@@ -315,11 +397,29 @@ async function checkLiveFolder() {
 input.addEventListener("change", updateSelection);
 input.addEventListener("input", updateSelection);
 tabs.forEach(tab => tab.addEventListener("click", () => selectTab(tab.dataset.tab)));
+homeSetupButton.addEventListener("click", () => liveFolderButton.click());
 
-keepHistory.checked = localStorage.getItem(historyEnabledKey) === "true";
+keepHistory.checked = localStorage.getItem(historyEnabledKey) !== "false";
+if (localStorage.getItem(historyEnabledKey) === null) localStorage.setItem(historyEnabledKey, "true");
 appVersionLabel.textContent = `Citizen Health ${appVersion}`;
 renderHistory();
 renderPrivacyStatus();
+loadSavedFolders().then(async saved => {
+  if (!saved?.liveDirectory) return;
+  liveDirectory = saved.liveDirectory;
+  launcherDirectory = saved.launcherDirectory;
+  monitorButton.disabled = false;
+  renderPrivacyStatus();
+  if (await canReadFolder(liveDirectory)) {
+    monitorStatus.textContent = "Saved game folder found. Citizen Health is watching your game.";
+    await startMonitoring();
+  } else {
+    monitorStatus.textContent = "Saved game folder found. Choose Start watching when you are ready to reconnect it.";
+    renderPrivacyStatus();
+  }
+}).catch(() => {
+  monitorStatus.textContent = "Choose your game folder to start.";
+});
 keepHistory.addEventListener("change", () => {
   localStorage.setItem(historyEnabledKey, String(keepHistory.checked));
   if (keepHistory.checked && report) recordLatestSession(report);
@@ -352,8 +452,10 @@ liveFolderButton.addEventListener("click", async () => {
   try {
     liveDirectory = await window.showDirectoryPicker({ mode: "read" });
     monitorButton.disabled = false;
-    monitorStatus.textContent = `Selected ${liveDirectory.name}. Monitoring is off until you enable it.`;
+    monitorStatus.textContent = `Game folder selected. Citizen Health is starting to watch it now.`;
+    await saveFolders();
     renderPrivacyStatus();
+    await startMonitoring();
   } catch (error) {
     if (error.name !== "AbortError") monitorStatus.textContent = "Citizen Health could not open that folder.";
   }
@@ -364,7 +466,8 @@ launcherFolderButton.addEventListener("click", async () => {
   try {
     launcherDirectory = await window.showDirectoryPicker({ mode: "read" });
     lastObservedFingerprint = undefined;
-    monitorStatus.textContent = `Launcher folder ${launcherDirectory.name} selected. Monitoring will include log.log when enabled.`;
+    monitorStatus.textContent = `Launcher folder selected. Citizen Health will include it while watching your game.`;
+    await saveFolders();
     renderPrivacyStatus();
     if (monitorTimer) await checkLiveFolder();
   } catch (error) {
@@ -373,11 +476,12 @@ launcherFolderButton.addEventListener("click", async () => {
 });
 
 monitorButton.addEventListener("click", async () => {
-  if (monitorTimer) { stopMonitoring("Monitoring stopped. Folder access ends when the page closes."); return; }
-  await checkLiveFolder();
-  monitorTimer = setInterval(checkLiveFolder, 15000);
-  monitorButton.textContent = "Stop local monitoring";
-  renderPrivacyStatus();
+  if (monitorTimer) { stopMonitoring("Watching paused. Your saved game folder is still ready for next time."); return; }
+  if (!await canReadFolder(liveDirectory, true)) {
+    monitorStatus.textContent = "Citizen Health needs access to your saved game folder before it can start watching.";
+    return;
+  }
+  await startMonitoring();
 });
 
 forgetFoldersButton.addEventListener("click", () => {
@@ -388,10 +492,11 @@ forgetFoldersButton.addEventListener("click", () => {
   lastObservedFingerprint = undefined;
   lastActivityKey = undefined;
   monitorButton.disabled = true;
-  monitorButton.textContent = "Enable local monitoring";
-  monitorStatus.textContent = "Selected folders have been forgotten. No folder access remains in this tab.";
+  monitorButton.textContent = "Start watching";
+  monitorStatus.textContent = "Saved folders have been reset.";
   activityNotice.classList.add("hidden");
   activityNotice.textContent = "";
+  clearSavedFolders().catch(() => { monitorStatus.textContent = "Folders were cleared from this page, but Citizen Health could not clear the saved folder settings."; });
   renderPrivacyStatus();
 });
 

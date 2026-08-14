@@ -7,13 +7,12 @@
   <link rel="stylesheet" href="src/styles.css">
 </head>
 <body>
-  <header><span class="eyebrow">LOCAL DIAGNOSTICS</span><h1>Citizen Health</h1><p>Understand a Star Citizen crash without guesswork—or touching the game.</p></header>
+  <header><span class="eyebrow">STAR CITIZEN COMPANION</span><h1>Citizen Health</h1><p>Your local game activity, crashes, and player history in one place.</p></header>
   <main>
-    <section class="safety"><strong>Read-only by design</strong><span>No injection</span><span>No memory access</span><span>No automation</span><span>No uploads</span></section>
     <section id="activity-notice" class="safety hidden" aria-live="polite"></section>
 
     <nav class="tab-list" role="tablist" aria-label="Citizen Health sections">
-      <button type="button" role="tab" id="tab-crash" aria-selected="true" aria-controls="panel-crash" data-tab="crash">Crash &amp; performance</button>
+      <button type="button" role="tab" id="tab-crash" aria-selected="true" aria-controls="panel-crash" data-tab="crash">Home</button>
       <button type="button" role="tab" id="tab-combat" aria-selected="false" aria-controls="panel-combat" data-tab="combat">Combat</button>
       <button type="button" role="tab" id="tab-shipping" aria-selected="false" aria-controls="panel-shipping" data-tab="shipping">Shipping</button>
       <button type="button" role="tab" id="tab-purchases" aria-selected="false" aria-controls="panel-purchases" data-tab="purchases">Purchases</button>
@@ -21,22 +20,21 @@
     </nav>
 
     <section id="panel-crash" class="tab-panel" role="tabpanel" aria-labelledby="tab-crash" data-tab-panel="crash">
+      <section class="panel home-status">
+        <span class="step">GAME STATUS</span><h2 id="home-title">Set up Citizen Health</h2><p id="home-status">Choose your Star Citizen LIVE folder once. After that, Citizen Health will watch your game automatically whenever it is open.</p>
+        <button id="home-setup" type="button">Choose game folder</button>
+      </section>
       <section class="panel">
-        <div><span class="step">01</span><h2>Analyze selected files</h2><p>Use this for a one-off crash or performance report. Files stay in this browser tab.</p></div>
-        <div class="picker"><input id="files" type="file" multiple accept=".log,.txt,.json,.xml" style="position:static; opacity:1;"><span>Choose logs and diagnostics</span><small>Game.log, launcher log, crash-handler text, optional DxDiag. Binary dumps are not read or exported.</small></div>
+        <div><span class="step">CHECK A CRASH</span><h2>Check a crash or performance problem</h2><p>Choose any game files you have and Citizen Health will explain what happened.</p></div>
+        <div class="picker"><input id="files" type="file" multiple accept=".log,.txt,.json,.xml" style="position:static; opacity:1;"><span>Choose game files</span><small>For advanced troubleshooting, add Game.log, launcher log, crash-handler text, or DxDiag.</small></div>
         <ul id="selected" class="selected"></ul>
         <p id="selection-status" class="selection-status">No files selected yet.</p>
-        <button id="analyze" disabled>Analyze selected files</button>
+        <button id="analyze" disabled>Check selected files</button>
       </section>
       <section id="results" class="panel hidden" aria-live="polite">
-        <div class="result-head"><div><span class="step">02</span><h2>Evidence-based findings</h2></div><button id="export" class="secondary">Export redacted bundle</button></div>
+        <div class="result-head"><div><span class="step">WHAT HAPPENED</span><h2>What Citizen Health found</h2></div><button id="export" class="secondary">Export support bundle</button></div>
         <p id="summary"></p><div id="findings" class="findings"></div>
-        <section id="input-coverage-section" class="input-coverage"><h3>Analysis coverage</h3><p id="input-coverage"></p></section>
-        <section id="support-summary-section"><div class="result-head"><h3>Redacted support summary</h3><button id="copy-support-summary" class="secondary" type="button">Copy summary</button></div><p class="muted">A concise, readable summary for a support request. Review it before sharing.</p><pre id="support-summary" class="support-summary"></pre></section>
-        <section id="session-section" class="hidden"><h3>Session context</h3><dl id="session" class="snapshot"></dl></section>
-        <section id="timeline-section" class="hidden"><h3>Local session timeline</h3><ul id="session-timeline" class="selected"></ul></section>
-        <section id="snapshot-section" class="hidden"><h3>DxDiag snapshot</h3><dl id="snapshot" class="snapshot"></dl></section>
-        <details><summary>Redaction preview</summary><pre id="redaction"></pre></details>
+        <details class="advanced"><summary>Advanced details</summary><section id="input-coverage-section" class="input-coverage"><h3>Analysis coverage</h3><p id="input-coverage"></p></section><section id="support-summary-section"><div class="result-head"><h3>Copy for support</h3><button id="copy-support-summary" class="secondary" type="button">Copy summary</button></div><p class="muted">Review this before sharing it with support.</p><pre id="support-summary" class="support-summary"></pre></section><section id="session-section" class="hidden"><h3>Session context</h3><dl id="session" class="snapshot"></dl></section><section id="timeline-section" class="hidden"><h3>Local session timeline</h3><ul id="session-timeline" class="selected"></ul></section><section id="snapshot-section" class="hidden"><h3>DxDiag snapshot</h3><dl id="snapshot" class="snapshot"></dl></section><details><summary>Redaction preview</summary><pre id="redaction"></pre></details></details>
       </section>
     </section>
 
@@ -69,28 +67,28 @@
 
     <section id="panel-settings" class="tab-panel hidden" role="tabpanel" aria-labelledby="tab-settings" data-tab-panel="settings">
       <section class="panel">
-        <div><span class="step">SETTINGS</span><h2>Local monitoring</h2><p>Choose your Star Citizen LIVE folder once. Citizen Health reads only the newest Game log while this page is open.</p></div>
-        <button id="choose-live-folder" type="button">Choose LIVE folder</button>
+        <div><span class="step">SETTINGS</span><h2>Watch my game</h2><p>Choose your Star Citizen LIVE folder once. Citizen Health will start watching automatically when it is open.</p></div>
+        <button id="choose-live-folder" type="button">Choose game folder</button>
         <button id="choose-launcher-folder" type="button" class="secondary">Add launcher logs folder</button>
-        <button id="monitor-live-folder" type="button" class="secondary" disabled>Enable local monitoring</button>
-        <button id="forget-folders" type="button" class="secondary" disabled>Forget selected folders</button>
-        <p id="monitor-status" class="selection-status">Monitoring is off. No folder access has been granted.</p><small>Launcher logs are optional. If added, choose the folder that contains <code>log.log</code>.</small>
+        <button id="monitor-live-folder" type="button" class="secondary" disabled>Start watching</button>
+        <button id="forget-folders" type="button" class="secondary" disabled>Reset saved folders</button>
+        <p id="monitor-status" class="selection-status">Choose your game folder to start.</p><small>Launcher logs are optional. If added, choose the folder that contains <code>log.log</code>.</small>
       </section>
       <section class="panel">
-        <div><span class="step">LOCAL DATA</span><h2>Optional player history</h2><p>Save compact sessions, direct combat events, and confirmed shop purchases only on this PC. This may include player names and purchase details; raw logs and evidence text are never stored.</p></div>
-        <label><input id="keep-history" type="checkbox"> Keep local session, combat, and purchase history on this PC</label>
-        <button id="clear-history" type="button" class="secondary">Delete local history</button>
-        <p id="history-status" class="selection-status">History is off.</p>
+        <div><span class="step">PLAYER HISTORY</span><h2>Save my activity</h2><p>Citizen Health saves your sessions, confirmed kills and deaths, and confirmed shop purchases on this PC.</p></div>
+        <label><input id="keep-history" type="checkbox"> Save activity history</label>
+        <button id="clear-history" type="button" class="secondary">Clear activity history</button>
+        <p id="history-status" class="selection-status">Activity history is on.</p>
         <ul id="history-list" class="selected"></ul>
       </section>
-      <section class="panel">
-        <div><span class="step">PRIVACY</span><h2>Local privacy status</h2><p>A plain-language view of what Citizen Health can access during this browser session.</p></div>
+      <section class="panel advanced">
+        <div><span class="step">ADVANCED</span><h2>Privacy and local access</h2><p>Details about the local folders and history Citizen Health can access.</p></div>
         <dl id="privacy-status" class="snapshot"></dl>
         <small>Folder selections and analyzed reports stay in page memory. Closing this tab clears them. Local history, including direct combat names when opted in, is the only optional browser storage.</small>
       </section>
     </section>
   </main>
   <footer><span id="app-version">Citizen Health</span> · Independent fan-made companion; not affiliated with Cloud Imperium Games.</footer>
-  <script type="module" src="src/app.js?v=16"></script>
+  <script type="module" src="src/app.js?v=17"></script>
 </body>
 </html>
