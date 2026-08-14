@@ -63,7 +63,7 @@ When enabled for a user-selected `LIVE` folder, Citizen Health displays in-app n
 
 The session timeline includes only confirmed gameplay entry, in-game disconnects, and application-exit markers. It does not infer missions, locations, actions, or causes from ambiguous log content.
 
-When local history is enabled, Citizen Health stores up to 100 compact session records. A session can retain up to 25 direct `Actor Death` events, including the recorded killer or victim name, weapon, and damage type. The combat view offers All, Deaths, and Kills filters plus a local recent-attacker summary. It does not infer incapacitations or unrecorded combat events.
+When local history is enabled, Citizen Health stores up to 100 compact session records. A session can retain up to 25 direct `Actor Death` events, including the recorded killer or victim name, weapon, and damage type. The combat view offers All, Deaths, and Kills filters plus a local recent-attacker summary. It does not currently track general incoming damage, attacks, or incapacitations, and it does not infer events the log did not record.
 
 ### Confirmed shop purchases
 

@@ -82,7 +82,7 @@ function renderCombatHistory(records = loadHistory()) {
   const summary = summarizeCombatHistory(records, combatHistoryFilter);
   combatHistorySummary.textContent = records.length
     ? `${summary.totalDeaths} recorded death${summary.totalDeaths === 1 ? "" : "s"} · ${summary.totalKills} recorded kill${summary.totalKills === 1 ? "" : "s"}. Names are local-only and come directly from saved combat events.`
-    : "No saved combat history yet. Turn on local history before analyzing or monitoring a session.";
+    : "No saved combat history yet. Turn on local history before analyzing or monitoring a session; earlier sessions cannot be reconstructed.";
   combatHistoryList.replaceChildren(...summary.events.map(event => {
     const item = document.createElement("li");
     const details = [event.weapon && `weapon: ${event.weapon}`, event.damageType && `damage: ${event.damageType}`].filter(Boolean).join(" · ");
