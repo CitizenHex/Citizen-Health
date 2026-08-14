@@ -98,15 +98,16 @@ export function parseShopPurchases(text) {
   const purchases = [];
   for (let index = 0; index < lines.length; index += 1) {
     const line = lines[index];
-    const match = line.match(/<(\d{4}-\d{2}-\d{2}T[^>]+)>.*?SendStandardItemBuyRequest> Sending SShopBuyRequest - .*?shopName\[([^\]]+)\].*?client_price\[([\d.]+)\].*?itemName\[([^\]]+)\]\s+quantity\[(\d+)\]\s+currencyType\[([^\]]+)\]/i);
+    const match = line.match(/<(\d{4}-\d{2}-\d{2}T[^>]+)>.*?(?:SendStandardItemBuyRequest|SendShopBuyRequest)> Sending SShopBuyRequest - .*?shopName\[([^\]]+)\].*?client_price\[([\d.]+)\].*?itemName\[([^\]]+)\]\s+quantity\[(\d+)\](?:\s+currencyType\[([^\]]+)\])?/i);
     if (!match) continue;
     const [, at, shop, price, item, quantity, currency] = match;
     const requestTime = Date.parse(at);
     const confirmed = lines.slice(index + 1, index + 20).some(candidate => {
       const timestamp = candidate.match(/<(\d{4}-\d{2}-\d{2}T[^>]+)>/)?.[1];
-      return timestamp && Date.parse(timestamp) - requestTime <= 10000 && /Transaction Complete:/i.test(candidate);
+      return timestamp && Date.parse(timestamp) - requestTime <= 10000
+        && (/Transaction Complete:/i.test(candidate) || /RmShopFlowResponse>.*?result\[Success\].*?type\[Buying\]/i.test(candidate));
     });
-    if (confirmed) purchases.push({ at, shop, item: itemLabel(item), quantity: Number(quantity), unitPrice: Number(price), currency });
+    if (confirmed) purchases.push({ at, shop, item: itemLabel(item), quantity: Number(quantity), unitPrice: Number(price), currency: currency || "currency not recorded" });
   }
   return purchases.slice(-100);
 }

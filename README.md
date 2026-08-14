@@ -67,7 +67,7 @@ When local history is enabled, Citizen Health stores up to 100 compact session r
 
 ### Confirmed shop purchases
 
-Citizen Health records a purchase only when `Game.log` contains both a shop buy request and a nearby **Transaction Complete** notification. The local record can include timestamp, shop, item, quantity, total price, and currency. Cargo transfers and shipping are currently excluded because available log evidence is not yet reliable enough to distinguish true transfers from loading-platform noise.
+Citizen Health records a purchase only when `Game.log` contains both a shop buy request and a nearby successful shop-flow response or **Transaction Complete** notification. The local record can include timestamp, shop, item, quantity, total price, and currency when the log provides it. Cargo transfers and shipping are currently excluded because available log evidence is not yet reliable enough to distinguish true transfers from loading-platform noise.
 
 ## Run and test
 

@@ -150,3 +150,8 @@ test("records shop purchases only after a nearby transaction completion", () => 
   const text = `<2026-08-13T19:10:00.000Z> <CEntityComponentShoppingProvider::SendStandardItemBuyRequest> Sending SShopBuyRequest - playerId[1] shopName[SCShop_Test] kioskId[0] client_price[7.000000] itemName[Drink_bottle_smoothie_01_a] quantity[2] currencyType[UEC]\n<2026-08-13T19:10:00.700Z> <SHUDEvent_OnNotification> Added notification "Transaction Complete: "\n<2026-08-13T19:11:00.000Z> <CEntityComponentShoppingProvider::SendStandardItemBuyRequest> Sending SShopBuyRequest - playerId[1] shopName[SCShop_Test] kioskId[0] client_price[10.000000] itemName[Unconfirmed_Item] quantity[1] currencyType[UEC]`;
   assert.deepEqual(parseShopPurchases(text), [{ at: "2026-08-13T19:10:00.000Z", shop: "SCShop_Test", item: "Drink bottle smoothie 01 a", quantity: 2, unitPrice: 7, currency: "UEC" }]);
 });
+
+test("records the current successful shop-flow purchase format", () => {
+  const text = `<2026-08-14T02:17:50.308Z> <CEntityComponentShopUIProvider::SendShopBuyRequest> Sending SShopBuyRequest - playerId[1] shopName[SCShop_Test] kioskId[0] client_price[58880.000000] itemName[apar_special_ballistic_01_mag] quantity[10]\n<2026-08-14T02:17:50.744Z> <CEntityComponentShopUIProvider::RmShopFlowResponse> Received ShopFlowResponse - kioskState[BuyRequestProcessing] result[Success] type[Buying]`;
+  assert.deepEqual(parseShopPurchases(text), [{ at: "2026-08-14T02:17:50.308Z", shop: "SCShop_Test", item: "apar special ballistic 01 mag", quantity: 10, unitPrice: 58880, currency: "currency not recorded" }]);
+});
