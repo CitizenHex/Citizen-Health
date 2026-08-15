@@ -1,11 +1,11 @@
 @echo off
 setlocal
 pushd "%~dp0"
-set "NODE_EXE=C:\Users\owner\.cache\codex-runtimes\codex-primary-runtime\dependencies\node\bin\node.exe"
+set "NODE_EXE=%~dp0runtime\node.exe"
 
 if not exist "%NODE_EXE%" (
-  echo Citizen Health could not find its local runtime.
-  echo Open this folder in Codex and start the project from there.
+  echo Citizen Health could not find its included runtime.
+  echo Please extract the complete Citizen Health ZIP before starting it.
   pause
   exit /b 1
 )

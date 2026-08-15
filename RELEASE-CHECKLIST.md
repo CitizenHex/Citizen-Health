@@ -10,9 +10,9 @@ Use this before publishing. A release must preserve the read-only, local-only bo
 
 ## Privacy and safety
 
-- [ ] Confirm folder access is optional, read-only, and page-memory only.
-- [ ] Confirm monitoring stops when the tab closes, access is lost, or **Forget selected folders** is pressed.
-- [ ] Confirm history is off by default and stores only compact session records.
+- [ ] Confirm folder access is read-only, saved only after the player selects it, and can be reset from Settings.
+- [ ] Confirm monitoring stops when the tab closes, access is lost, or **Reset saved folders** is pressed.
+- [ ] Confirm history stores only compact session records and can be disabled or deleted from Settings.
 - [ ] Confirm exports and summaries exclude raw logs, source paths, binary dumps, and unrecognized raw text.
 - [ ] Confirm the server binds only to `127.0.0.1` and the browser policy blocks outbound connections.
 - [ ] Confirm there are no runtime package dependencies.
